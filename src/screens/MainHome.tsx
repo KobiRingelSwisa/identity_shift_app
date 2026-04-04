@@ -8,12 +8,12 @@ import {
   Text,
   View,
 } from "react-native";
+import { AccentGlow } from "../ui/AccentGlow";
 import { ScreenLayout } from "../ui/ScreenLayout";
 import { PrimaryButton } from "../ui/PrimaryButton";
 import type { AppProgress } from "../storage/progress";
 import { isDailyNextLocked } from "../storage/progress";
 import type { ConfidenceProgram } from "../session/types";
-import { getDayThemeLabelHe } from "../session/loadProgram";
 import { theme } from "../ui/theme";
 
 type Props = {
@@ -25,14 +25,17 @@ type Props = {
 };
 
 const WINDOW_H = Dimensions.get("window").height;
-const HERO_HEIGHT = Math.round(WINDOW_H * 0.35);
+const HERO_MIN_H = Math.round(WINDOW_H * 0.3);
 
-const HERO_FADE_MS = 300;
-const STAGGER_MS = 100;
-const FOOTER_FADE_MS = 280;
-const LOCK_CROSS_MS = 240;
+/** Single intentional copy path — no dynamic theme lines */
+const HERO_CAPTION = "הרגע שלך מתחיל כאן";
+const FOCUS_LINE = "היום מחזקים נוכחות גם כשאין ודאות";
+
+const ENTRY_MS = 400;
+const STAGGER_MS = 70;
+const ACTION_DELAY_MS = 140;
 const PULSE_UP_MS = 520;
-const PULSE_PAUSE_MS = 2500;
+const PULSE_PAUSE_MS = 2800;
 
 /** Spec: #9CA3AF */
 const CAPTION_COLOR = "#9CA3AF";
@@ -44,100 +47,52 @@ export function MainHome({
   onOpenSettings,
   onOpenAbout,
 }: Props) {
-
   const { duration_days } = program.track;
   const done = progress.currentDay > duration_days;
   const dayToShow = Math.min(progress.currentDay, duration_days);
   const locked = isDailyNextLocked(progress, duration_days);
 
-  const themeLabel = getDayThemeLabelHe(program, dayToShow);
-
   const heroOpacity = useRef(new Animated.Value(0)).current;
-  const focusLineOpacity = useRef(new Animated.Value(0)).current;
-  const focusCardOpacity = useRef(new Animated.Value(0)).current;
-  const footerEnterOpacity = useRef(new Animated.Value(0)).current;
-  const ctaLayerOpacity = useRef(new Animated.Value(0)).current;
-  const lockedLayerOpacity = useRef(new Animated.Value(0)).current;
+  const cardOpacity = useRef(new Animated.Value(0)).current;
+  const actionOpacity = useRef(new Animated.Value(0)).current;
   const pulseScale = useRef(new Animated.Value(1)).current;
-  const prevLocked = useRef(locked);
-  const skipLockedCrossfadeOnce = useRef(true);
 
-  /** Entry: hero → focus line → card → footer (stagger 100ms). */
   useEffect(() => {
     heroOpacity.setValue(0);
-    focusLineOpacity.setValue(0);
-    focusCardOpacity.setValue(0);
-    footerEnterOpacity.setValue(0);
+    cardOpacity.setValue(0);
+    if (!done) actionOpacity.setValue(0);
 
-    Animated.timing(heroOpacity, {
-      toValue: 1,
-      duration: HERO_FADE_MS,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true,
-    }).start();
-
-    const t1 = setTimeout(() => {
-      Animated.timing(focusLineOpacity, {
+    const parallel: Animated.CompositeAnimation[] = [
+      Animated.timing(heroOpacity, {
         toValue: 1,
-        duration: FOOTER_FADE_MS,
+        duration: ENTRY_MS,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-      }).start();
-    }, STAGGER_MS);
-
-    const t2 = setTimeout(() => {
-      Animated.timing(focusCardOpacity, {
+      }),
+      Animated.timing(cardOpacity, {
         toValue: 1,
-        duration: FOOTER_FADE_MS,
+        duration: ENTRY_MS,
+        delay: STAGGER_MS,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
-      }).start();
-    }, STAGGER_MS * 2);
+      }),
+    ];
 
-    const t3 = setTimeout(() => {
-      Animated.timing(footerEnterOpacity, {
-        toValue: 1,
-        duration: FOOTER_FADE_MS,
-        easing: Easing.out(Easing.cubic),
-        useNativeDriver: true,
-      }).start();
-    }, STAGGER_MS * 3);
-
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-      clearTimeout(t3);
-    };
-  }, [heroOpacity, focusLineOpacity, focusCardOpacity, footerEnterOpacity]);
-
-  /** First paint: fade in CTA or locked footer after stagger (no crossfade). */
-  useEffect(() => {
-    if (done) return;
-    ctaLayerOpacity.setValue(0);
-    lockedLayerOpacity.setValue(0);
-    const t = setTimeout(() => {
-      if (locked) {
-        Animated.timing(lockedLayerOpacity, {
+    if (!done) {
+      parallel.push(
+        Animated.timing(actionOpacity, {
           toValue: 1,
-          duration: FOOTER_FADE_MS,
+          duration: ENTRY_MS,
+          delay: ACTION_DELAY_MS,
           easing: Easing.out(Easing.cubic),
           useNativeDriver: true,
-        }).start();
-      } else {
-        Animated.timing(ctaLayerOpacity, {
-          toValue: 1,
-          duration: FOOTER_FADE_MS,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }).start();
-      }
-    }, STAGGER_MS * 3);
-    return () => clearTimeout(t);
-    // Intentionally once on mount — `locked`/`done` read from initial render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+        })
+      );
+    }
 
-  /** Soft pulse on primary day CTA (unlocked only). */
+    Animated.parallel(parallel).start();
+  }, [heroOpacity, cardOpacity, actionOpacity, done]);
+
   useEffect(() => {
     if (done || locked) {
       pulseScale.setValue(1);
@@ -146,7 +101,7 @@ export function MainHome({
     const loop = Animated.loop(
       Animated.sequence([
         Animated.timing(pulseScale, {
-          toValue: 1.02,
+          toValue: 1.015,
           duration: PULSE_UP_MS,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
@@ -167,96 +122,8 @@ export function MainHome({
     };
   }, [done, locked, pulseScale]);
 
-  /** Crossfade when `locked` changes after initial footer fade-in. */
-  useEffect(() => {
-    if (done) return;
-    if (skipLockedCrossfadeOnce.current) {
-      skipLockedCrossfadeOnce.current = false;
-      prevLocked.current = locked;
-      return;
-    }
-    if (prevLocked.current === locked) return;
-    prevLocked.current = locked;
-
-    if (locked) {
-      Animated.sequence([
-        Animated.timing(ctaLayerOpacity, {
-          toValue: 0,
-          duration: LOCK_CROSS_MS,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(lockedLayerOpacity, {
-          toValue: 1,
-          duration: LOCK_CROSS_MS + 40,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    } else {
-      Animated.sequence([
-        Animated.timing(lockedLayerOpacity, {
-          toValue: 0,
-          duration: LOCK_CROSS_MS,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-        Animated.timing(ctaLayerOpacity, {
-          toValue: 1,
-          duration: LOCK_CROSS_MS + 40,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }),
-      ]).start();
-    }
-  }, [locked, done, ctaLayerOpacity, lockedLayerOpacity]);
-
-  const footerInner = (
-    <View style={styles.footerStack}>
-      <Animated.View
-        style={[styles.footerLayer, { opacity: ctaLayerOpacity }]}
-        pointerEvents={locked ? "none" : "auto"}
-      >
-        <Animated.View
-          style={[
-            styles.ctaWrap,
-            { transform: [{ scale: pulseScale }] },
-          ]}
-        >
-          <PrimaryButton
-            variant="home"
-            label={`המשך ליום ${dayToShow}`}
-            onPress={onStartSession}
-          />
-        </Animated.View>
-      </Animated.View>
-
-      <Animated.View
-        style={[styles.footerLayer, styles.footerLayerAbs, { opacity: lockedLayerOpacity }]}
-        pointerEvents={locked ? "auto" : "none"}
-      >
-        <View style={styles.lockedFooter}>
-          <Text style={styles.lockedTitle}>סיימת את האימון להיום</Text>
-          <Text style={styles.lockedSubtitle}>היום הבא ייפתח מחר</Text>
-          <View style={styles.lockedSpacer} />
-          <PrimaryButton
-            variant="home"
-            label="חזור על האימון"
-            onPress={onStartSession}
-          />
-        </View>
-      </Animated.View>
-    </View>
-  );
-
-  const footer = (
-    <Animated.View style={[styles.footerWrap, { opacity: footerEnterOpacity }]}>
-      {footerInner}
-    </Animated.View>
-  );
-
-  const topBar = (
-    <Animated.View style={[styles.topBar, { opacity: heroOpacity }]}>
+  const topLinks = (
+    <View style={styles.topLinks}>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="הגדרות"
@@ -273,49 +140,91 @@ export function MainHome({
       >
         <Text style={styles.topLink}>אודות</Text>
       </Pressable>
-    </Animated.View>
+    </View>
   );
 
   if (done) {
     return (
-      <ScreenLayout background="solid" footer={null}>
+      <ScreenLayout background="gradient" footer={null}>
         <View style={styles.stack}>
-          {topBar}
-          <Animated.View style={[styles.hero, { minHeight: HERO_HEIGHT, opacity: heroOpacity }]}>
-            <Text style={styles.caption}>המסלול</Text>
-            <Text style={styles.heroTitle}>הושלם</Text>
-          </Animated.View>
-          <Animated.View style={[styles.focusCard, { opacity: focusCardOpacity }]}>
-            <Text style={styles.cardLine2}>התקדמות נבנית יום אחרי יום</Text>
+          <View style={styles.heroShell}>
+            <AccentGlow intensity={0.75} />
+            <Animated.View
+              style={[styles.heroBlock, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
+            >
+              {topLinks}
+              <Text style={styles.caption}>המסלול</Text>
+              <Text style={styles.heroTitle}>הושלם</Text>
+            </Animated.View>
+          </View>
+          <Animated.View style={{ opacity: cardOpacity, alignSelf: "stretch" }}>
+            <View style={styles.focusCard}>
+              <Text style={styles.cardLine2}>התקדמות נבנית יום אחרי יום</Text>
+            </View>
           </Animated.View>
         </View>
       </ScreenLayout>
     );
   }
 
+  const primaryAction =
+    locked ? (
+      <View style={styles.lockedBlock}>
+        <Text style={styles.lockedTitle}>סיימת את האימון להיום</Text>
+        <Text style={styles.lockedSubtitle}>היום הבא ייפתח מחר</Text>
+        <View style={styles.lockedSpacer} />
+        <PrimaryButton
+          variant="home"
+          label="חזור על האימון"
+          onPress={onStartSession}
+        />
+      </View>
+    ) : (
+      <Animated.View
+        style={[styles.ctaWrap, { transform: [{ scale: pulseScale }] }]}
+      >
+        <PrimaryButton
+          variant="home"
+          label={`המשך ליום ${dayToShow}`}
+          onPress={onStartSession}
+        />
+      </Animated.View>
+    );
+
   return (
-    <ScreenLayout background="solid" footer={footer}>
+    <ScreenLayout
+      background="gradient"
+      footer={
+        <Animated.View style={[styles.footerAction, { opacity: actionOpacity }]}>
+          {primaryAction}
+        </Animated.View>
+      }
+    >
       <View style={styles.stack}>
-        {topBar}
-        <View style={[styles.hero, { minHeight: HERO_HEIGHT }]}>
-          <Animated.View style={{ opacity: heroOpacity, alignSelf: "stretch", gap: 8 }}>
-            <Text style={styles.caption}>הרגע שלך מתחיל כאן</Text>
-            <Text style={styles.heroTitle}>{`יום ${dayToShow}`}</Text>
-          </Animated.View>
-          <Animated.Text
-            style={[styles.focusLine, { opacity: focusLineOpacity }]}
-            numberOfLines={2}
-            ellipsizeMode="tail"
+        {/* 1. Hero */}
+        <View style={styles.heroShell}>
+          <AccentGlow intensity={0.75} />
+          <Animated.View
+            style={[styles.heroBlock, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
           >
-            {themeLabel}
-          </Animated.Text>
+            {topLinks}
+            <Text style={styles.caption}>{HERO_CAPTION}</Text>
+            <Text style={styles.heroTitle}>{`יום ${dayToShow}`}</Text>
+            <Text style={styles.focusLine}>{FOCUS_LINE}</Text>
+          </Animated.View>
         </View>
 
-        <Animated.View style={[styles.focusCard, { opacity: focusCardOpacity }]}>
-          <Text style={styles.cardLine1}>
-            {`אתה כבר ${progress.streak} ימים ברצף`}
-          </Text>
-          <Text style={styles.cardLine2}>התקדמות נבנית יום אחרי יום</Text>
+        {/* 2. Support / progress */}
+        <Animated.View style={{ opacity: cardOpacity, alignSelf: "stretch" }}>
+          <View style={styles.focusCard}>
+            <Text style={styles.cardLine1}>
+              {`כבר ${progress.streak} ימים ברצף`}
+            </Text>
+            <Text style={styles.cardLine2}>התקדמות נבנית יום אחרי יום</Text>
+            <Text style={styles.cardLine3}>
+              {`יום ${dayToShow} מתוך ${duration_days}`}
+            </Text>
+          </View>
         </Animated.View>
       </View>
     </ScreenLayout>
@@ -326,27 +235,30 @@ const styles = StyleSheet.create({
   stack: {
     alignSelf: "stretch",
     gap: 24,
+    paddingTop: 8,
   },
-  topBar: {
+  heroShell: {
+    alignSelf: "stretch",
+    position: "relative",
+  },
+  heroBlock: {
+    paddingTop: 0,
+    justifyContent: "flex-start",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  topLinks: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignSelf: "stretch",
     alignItems: "center",
-    marginBottom: 4,
-    paddingTop: 4,
+    marginBottom: 12,
   },
   topLink: {
     fontSize: 15,
     fontWeight: "500",
     color: CAPTION_COLOR,
     writingDirection: "rtl",
-  },
-  hero: {
-    paddingTop: 8,
-    paddingHorizontal: 0,
-    justifyContent: "flex-start",
-    alignItems: "flex-end",
-    gap: 8,
   },
   caption: {
     fontSize: 13,
@@ -370,8 +282,10 @@ const styles = StyleSheet.create({
   },
   focusCard: {
     padding: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: "rgba(255,255,255,0.045)",
     borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.06)",
     alignSelf: "stretch",
     alignItems: "flex-end",
     gap: 8,
@@ -384,36 +298,30 @@ const styles = StyleSheet.create({
   },
   cardLine2: {
     fontSize: 15,
-    color: "#FFFFFF",
+    color: "rgba(255,255,255,0.92)",
     textAlign: "right",
     writingDirection: "rtl",
   },
-  footerWrap: {
-    marginTop: 32,
-    alignSelf: "stretch",
+  cardLine3: {
+    fontSize: 12,
+    color: "rgba(156, 163, 175, 0.85)",
+    textAlign: "right",
+    writingDirection: "rtl",
+    marginTop: 2,
   },
-  footerStack: {
+  footerAction: {
     alignSelf: "stretch",
-    minHeight: 56,
-  },
-  footerLayer: {
-    alignSelf: "stretch",
-  },
-  footerLayerAbs: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    top: 0,
   },
   ctaWrap: {
     alignSelf: "stretch",
   },
-  lockedFooter: {
+  lockedBlock: {
     alignSelf: "stretch",
     alignItems: "flex-end",
   },
   lockedTitle: {
     fontSize: 20,
+    fontWeight: "500",
     color: theme.text,
     textAlign: "right",
     writingDirection: "rtl",
@@ -426,6 +334,6 @@ const styles = StyleSheet.create({
     writingDirection: "rtl",
   },
   lockedSpacer: {
-    height: 16,
+    height: 20,
   },
 });
