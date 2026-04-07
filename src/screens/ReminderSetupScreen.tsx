@@ -1,4 +1,5 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { trackEvent } from '../analytics/track';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ScreenLayout } from '../ui/ScreenLayout';
 import { PrimaryButton } from '../ui/PrimaryButton';
@@ -22,8 +23,13 @@ export function ReminderSetupScreen({ onComplete }: Props) {
   const [hour, setHour] = useState(9);
   const [minute, setMinute] = useState(0);
 
+  useEffect(() => {
+    void trackEvent('reminder_prompt_viewed');
+  }, []);
+
   const skip = useCallback(async () => {
     await persistAndScheduleReminders({ promptSeen: true });
+    void trackEvent('reminder_denied');
     onComplete();
   }, [onComplete]);
 
@@ -35,6 +41,7 @@ export function ReminderSetupScreen({ onComplete }: Props) {
       minute,
       promptSeen: true,
     });
+    void trackEvent('reminder_enabled');
     onComplete();
   }, [hour, minute, onComplete]);
 

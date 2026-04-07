@@ -3,12 +3,13 @@ import { StyleSheet, Text, View } from 'react-native';
 import { SessionEngine } from './SessionEngine';
 import { getDaySteps, loadProgram } from './loadProgram';
 import type { ConfidenceProgram } from './types';
+import type { SessionRun } from '../backend/types';
 import { theme } from '../ui/theme';
 
 export type SessionContainerProps = {
   program?: ConfidenceProgram;
   currentDay: number;
-  onSessionComplete?: () => void;
+  onSessionComplete?: (run: SessionRun) => void | Promise<void>;
 };
 
 export function SessionContainer({
@@ -33,7 +34,12 @@ export function SessionContainer({
   }
 
   return (
-    <SessionEngine steps={steps} onSessionComplete={onSessionComplete} />
+    <SessionEngine
+      steps={steps}
+      programId={program.track.id}
+      day={currentDay}
+      onSessionComplete={onSessionComplete}
+    />
   );
 }
 

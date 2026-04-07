@@ -18,6 +18,11 @@ import { TrackCompleteSummary } from './src/screens/TrackCompleteSummary';
 import { PostSessionScreen } from './src/screens/PostSessionScreen';
 import { SettingsScreen } from './src/screens/SettingsScreen';
 import { AboutScreen } from './src/screens/AboutScreen';
+import { PrivacyPolicyScreen } from './src/screens/PrivacyPolicyScreen';
+import { TermsOfUseScreen } from './src/screens/TermsOfUseScreen';
+import { SubscriptionTermsScreen } from './src/screens/SubscriptionTermsScreen';
+import { PaywallScreen } from './src/screens/PaywallScreen';
+import { ErrorBoundary } from './src/ui/ErrorBoundary';
 import { ReminderSetupScreen } from './src/screens/ReminderSetupScreen';
 import { useAppBootstrap } from './src/app/useAppBootstrap';
 import { useAppFlow } from './src/app/useAppFlow';
@@ -29,7 +34,13 @@ I18nManager.forceRTL(true);
 
 const program = loadProgram();
 
-type Panel = 'none' | 'settings' | 'about';
+type Panel =
+  | 'none'
+  | 'settings'
+  | 'about'
+  | 'privacy'
+  | 'terms'
+  | 'subscription_terms';
 
 function AppInner() {
   const {
@@ -50,6 +61,8 @@ function AppInner() {
     dismissTrackComplete,
     homeFromPostSession,
     replayFromPostSession,
+    paywallTrigger,
+    dismissPaywall,
   } = useAppFlow({ program, progress, refreshProgress });
 
   const onRestartTrack = useCallback(async () => {
@@ -82,6 +95,14 @@ function AppInner() {
     return (
       <SafeAreaView style={styles.safe}>
         <ReminderSetupScreen onComplete={reminderSetupDone} />
+      </SafeAreaView>
+    );
+  }
+
+  if (paywallTrigger != null) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <PaywallScreen reason={paywallTrigger} onClose={dismissPaywall} />
       </SafeAreaView>
     );
   }
@@ -137,7 +158,34 @@ function AppInner() {
         <SettingsScreen
           onBack={() => setPanel('none')}
           onProgressReset={refreshProgress}
+          onOpenPrivacy={() => setPanel('privacy')}
+          onOpenTerms={() => setPanel('terms')}
+          onOpenSubscriptionTerms={() => setPanel('subscription_terms')}
         />
+      </SafeAreaView>
+    );
+  }
+
+  if (panel === 'privacy') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <PrivacyPolicyScreen onBack={() => setPanel('settings')} />
+      </SafeAreaView>
+    );
+  }
+
+  if (panel === 'terms') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <TermsOfUseScreen onBack={() => setPanel('settings')} />
+      </SafeAreaView>
+    );
+  }
+
+  if (panel === 'subscription_terms') {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <SubscriptionTermsScreen onBack={() => setPanel('settings')} />
       </SafeAreaView>
     );
   }
@@ -180,7 +228,9 @@ export default function App() {
 
   return (
     <SafeAreaProvider style={styles.safe}>
-      <AppInner />
+      <ErrorBoundary>
+        <AppInner />
+      </ErrorBoundary>
     </SafeAreaProvider>
   );
 }

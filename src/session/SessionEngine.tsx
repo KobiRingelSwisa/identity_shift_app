@@ -1,35 +1,102 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { StepRenderer } from './StepRenderer';
 import { SessionStepFade } from './SessionStepFade';
 import type { Step } from './types';
 import type { SessionAnswers } from './sessionAnswers';
+import type { SessionRun } from '../backend/types';
+import { buildSessionStepRuns } from './buildSessionRun';
+import { getStepId } from './stepIds';
+import { trackEvent } from '../analytics/track';
 import { theme } from '../ui/theme';
 
 export type SessionEngineProps = {
   steps: Step[];
-  onSessionComplete?: () => void;
+  programId: string;
+  day: number;
+  onSessionComplete?: (run: SessionRun) => void | Promise<void>;
 };
 
-export function SessionEngine({ steps, onSessionComplete }: SessionEngineProps) {
+export function SessionEngine({
+  steps,
+  programId,
+  day,
+  onSessionComplete,
+}: SessionEngineProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
-  /** In-memory only; not read in MVP — see sessionAnswers.ts */
   const answersRef = useRef<SessionAnswers>({});
+  const startedAtRef = useRef<string>(new Date().toISOString());
+  const completedRef = useRef(false);
+  const lastIndexRef = useRef(0);
+  const dayRef = useRef(day);
+  dayRef.current = day;
 
   const total = steps.length;
   const step = steps[currentStepIndex];
 
-  const recordAnswer = useCallback((key: string, value: string) => {
-    answersRef.current = { ...answersRef.current, [key]: value };
+  useEffect(() => {
+    lastIndexRef.current = currentStepIndex;
+  }, [currentStepIndex]);
+
+  useEffect(() => {
+    const s = steps[currentStepIndex];
+    if (!s) return;
+    void trackEvent('step_viewed', {
+      step_id: getStepId(s, currentStepIndex),
+      step_type: s.type,
+      day,
+      index: currentStepIndex,
+    });
+  }, [currentStepIndex, day, steps]);
+
+  useEffect(() => {
+    return () => {
+      if (!completedRef.current) {
+        void trackEvent('session_abandoned', {
+          day: dayRef.current,
+          last_step_index: lastIndexRef.current,
+        });
+      }
+    };
   }, []);
+
+  const recordAnswer = useCallback(
+    (key: string, value: string) => {
+      answersRef.current = { ...answersRef.current, [key]: value };
+      if (!key.startsWith('feedback-')) {
+        void trackEvent('choice_selected', {
+          step_id: key,
+          day,
+          value,
+        });
+      }
+    },
+    [day]
+  );
 
   const goNext = useCallback(() => {
     if (currentStepIndex >= total - 1) {
-      onSessionComplete?.();
+      completedRef.current = true;
+      const run: SessionRun = {
+        runId: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        startedAt: startedAtRef.current,
+        completedAt: new Date().toISOString(),
+        programId,
+        day,
+        steps: buildSessionStepRuns(steps, answersRef.current),
+      };
+      void Promise.resolve(onSessionComplete?.(run));
       return;
     }
     setCurrentStepIndex((i) => i + 1);
-  }, [currentStepIndex, onSessionComplete, total]);
+  }, [
+    currentStepIndex,
+    day,
+    onSessionComplete,
+    programId,
+    steps,
+    total,
+  ]);
 
   if (!step) {
     return (

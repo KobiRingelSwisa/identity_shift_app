@@ -1,5 +1,5 @@
 /**
  * In-session responses from choice/feedback steps.
- * In-memory only in MVP — not persisted; kept for future insights or exports.
+ * Aggregated into `SessionRun` at session end via `buildSessionStepRuns` + backend.
  */
 export type SessionAnswers = Record<string, string>;

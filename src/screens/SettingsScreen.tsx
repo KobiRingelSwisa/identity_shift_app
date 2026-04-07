@@ -1,12 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Alert,
+  Linking,
+  Platform,
   Pressable,
   StyleSheet,
   Switch,
   Text,
   View,
 } from 'react-native';
+import Constants from 'expo-constants';
 import { ScreenLayout } from '../ui/ScreenLayout';
 import { PrimaryButton } from '../ui/PrimaryButton';
 import { PremiumCard } from '../ui/PremiumCard';
@@ -18,6 +21,10 @@ import {
 } from '../storage/reminders';
 import { persistAndScheduleReminders } from '../notifications/reminders';
 import { resetTrackProgress } from '../storage/progress';
+import {
+  getAnalyticsConsent,
+  setAnalyticsConsent,
+} from '../storage/analyticsConsent';
 
 const PRESETS: { label: string; hour: number; minute: number }[] = [
   { label: '08:00', hour: 8, minute: 0 },
@@ -29,18 +36,43 @@ const PRESETS: { label: string; hour: number; minute: number }[] = [
 type Props = {
   onBack: () => void;
   onProgressReset: () => Promise<void>;
+  onOpenPrivacy: () => void;
+  onOpenTerms: () => void;
+  onOpenSubscriptionTerms: () => void;
 };
 
-export function SettingsScreen({ onBack, onProgressReset }: Props) {
+export function SettingsScreen({
+  onBack,
+  onProgressReset,
+  onOpenPrivacy,
+  onOpenTerms,
+  onOpenSubscriptionTerms,
+}: Props) {
   const [settings, setSettings] = useState<ReminderSettings | null>(null);
+  const [analyticsOn, setAnalyticsOn] = useState(true);
 
   useEffect(() => {
     void loadReminderSettings().then(setSettings);
   }, []);
 
+  useEffect(() => {
+    void getAnalyticsConsent().then(setAnalyticsOn);
+  }, []);
+
   const apply = useCallback(async (partial: Partial<ReminderSettings>) => {
     await persistAndScheduleReminders(partial);
     setSettings(await loadReminderSettings());
+  }, []);
+
+  const openSupportMail = useCallback((subject: string) => {
+    const body = [
+      `גרסה: ${Constants.expoConfig?.version ?? 'unknown'}`,
+      `פלטפורמה: ${Platform.OS}`,
+    ].join('\n');
+    const url = `mailto:support@example.com?subject=${encodeURIComponent(
+      subject
+    )}&body=${encodeURIComponent(body)}`;
+    void Linking.openURL(url);
   }, []);
 
   const onResetTrack = useCallback(() => {
@@ -134,6 +166,70 @@ export function SettingsScreen({ onBack, onProgressReset }: Props) {
           איפוס מחזיר ליום 1 ומנקה את ההתקדמות במסלול הנוכחי.
         </Text>
         <PrimaryButton label="איפוס מסלול" onPress={onResetTrack} />
+      </PremiumCard>
+
+      <PremiumCard style={styles.card}>
+        <Text style={styles.sectionTitle}>פרטיות ואנליטיקה</Text>
+        <View style={styles.separator} />
+        <View style={styles.row}>
+          <Text style={styles.label}>שיתוף אנליטיקה (אנונימי)</Text>
+          <Switch
+            value={analyticsOn}
+            onValueChange={(v) => {
+              setAnalyticsOn(v);
+              void setAnalyticsConsent(v);
+            }}
+            trackColor={{
+              false: theme.backgroundSecondary,
+              true: 'rgba(124, 154, 255, 0.45)',
+            }}
+            thumbColor="#f8fafc"
+          />
+        </View>
+        <Text style={styles.hint}>
+          כבוי: לא נשלחים אירועי מוצר (נשמרים אירועים קריטיים מינימליים כמו
+          השלמת סשן לפי מדיניות החנות).
+        </Text>
+      </PremiumCard>
+
+      <PremiumCard style={styles.card}>
+        <Text style={styles.sectionTitle}>משפטי</Text>
+        <View style={styles.separator} />
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenPrivacy}
+          style={styles.linkRow}
+        >
+          <Text style={styles.link}>מדיניות פרטיות</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenTerms}
+          style={styles.linkRow}
+        >
+          <Text style={styles.link}>תנאי שימוש</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenSubscriptionTerms}
+          style={styles.linkRow}
+        >
+          <Text style={styles.link}>תנאי מנוי</Text>
+        </Pressable>
+      </PremiumCard>
+
+      <PremiumCard style={styles.card}>
+        <Text style={styles.sectionTitle}>תמיכה</Text>
+        <View style={styles.separator} />
+        <PrimaryButton
+          label="צור קשר"
+          onPress={() => openSupportMail('Identity Shift — תמיכה')}
+        />
+        <View style={styles.supportSpacer} />
+        <PrimaryButton
+          label="דווח על תקלה"
+          onPress={() => openSupportMail('Identity Shift — דיווח תקלה')}
+        />
       </PremiumCard>
     </ScreenLayout>
   );
@@ -229,5 +325,18 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: 40,
     writingDirection: 'rtl',
+  },
+  linkRow: {
+    paddingVertical: 10,
+    alignSelf: 'stretch',
+  },
+  link: {
+    color: theme.accent,
+    fontSize: 16,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  supportSpacer: {
+    height: 12,
   },
 });
