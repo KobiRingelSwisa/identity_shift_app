@@ -49,6 +49,11 @@ export type AnalyticsEventMap = {
   restore_started: { programId: string };
   restore_success: { programId: string };
   restore_failed: { reason: string; programId: string };
+  /** Soft CTA (not paywall primary); funnel baseline for upgrade discovery */
+  growth_upgrade_cta_clicked: {
+    surface: 'post_session' | 'track_complete';
+    programId: string;
+  };
 };
 
 export type AnalyticsEventName = keyof AnalyticsEventMap;

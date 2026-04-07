@@ -1,5 +1,13 @@
 import { useEffect, useRef } from 'react';
-import { Alert, Animated, ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  Alert,
+  Animated,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { PrimaryButton } from '../ui/PrimaryButton';
@@ -17,6 +25,8 @@ type Props = {
   progress: AppProgress;
   onContinue: () => void;
   onRestartTrack?: () => void;
+  showUpgradeCTA?: boolean;
+  onOpenUpgrade?: () => void;
 };
 
 export function TrackCompleteSummary({
@@ -24,6 +34,8 @@ export function TrackCompleteSummary({
   progress,
   onContinue,
   onRestartTrack,
+  showUpgradeCTA,
+  onOpenUpgrade,
 }: Props) {
   const insets = useSafeAreaInsets();
   const days = program.track.duration_days;
@@ -108,6 +120,21 @@ export function TrackCompleteSummary({
             ) : null}
           </PremiumCard>
         </Animated.View>
+
+        {showUpgradeCTA && onOpenUpgrade ? (
+          <Animated.View style={{ opacity: footerOpacity }}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="תמיכה בפיתוח Identity Shift Plus"
+              onPress={onOpenUpgrade}
+              style={styles.upgradePress}
+            >
+              <Text style={styles.upgradeLink}>
+                תמיכה בפיתוח — Identity Shift+
+              </Text>
+            </Pressable>
+          </Animated.View>
+        ) : null}
       </ScrollView>
 
       <Animated.View
@@ -165,6 +192,20 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     paddingHorizontal: 24,
     gap: spacing.xl,
+  },
+  upgradePress: {
+    alignSelf: 'flex-end',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+    marginTop: -spacing.md,
+  },
+  upgradeLink: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: 'rgba(124, 154, 255, 0.92)',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    textDecorationLine: 'underline',
   },
   header: {
     gap: spacing.md,

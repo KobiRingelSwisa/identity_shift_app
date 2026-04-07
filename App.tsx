@@ -29,6 +29,8 @@ import { useAppFlow } from './src/app/useAppFlow';
 import { resetTrackProgress } from './src/storage/progress';
 import { theme } from './src/ui/theme';
 import { featureFlags } from './src/config/featureFlags';
+import { usePremiumEntitlement } from './src/hooks/usePremiumEntitlement';
+import { trackEvent } from './src/analytics/track';
 
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
@@ -65,8 +67,37 @@ function AppInner() {
     replayFromPostSession,
     paywallTrigger,
     dismissPaywall,
+    openPaywall,
     openPaywallFromSettings,
   } = useAppFlow({ program, progress, refreshProgress });
+
+  const { premium } = usePremiumEntitlement();
+
+  const showPostSessionGrowthCta =
+    featureFlags.ENABLE_PAYWALL &&
+    featureFlags.GROWTH_POST_SESSION_UPGRADE_CTA &&
+    premium === false;
+
+  const showTrackCompleteGrowthCta =
+    featureFlags.ENABLE_PAYWALL &&
+    featureFlags.GROWTH_TRACK_COMPLETE_UPGRADE_CTA &&
+    premium === false;
+
+  const onGrowthPostSession = useCallback(() => {
+    void trackEvent('growth_upgrade_cta_clicked', {
+      surface: 'post_session',
+      programId: program.track.id,
+    });
+    openPaywall('growth_post_session');
+  }, [program.track.id, openPaywall]);
+
+  const onGrowthTrackComplete = useCallback(() => {
+    void trackEvent('growth_upgrade_cta_clicked', {
+      surface: 'track_complete',
+      programId: program.track.id,
+    });
+    openPaywall('growth_track_complete');
+  }, [program.track.id, openPaywall]);
 
   const onRestartTrack = useCallback(async () => {
     await resetTrackProgress();
@@ -126,6 +157,8 @@ function AppInner() {
           totalSessionsCompleted={postSession.totalSessionsCompleted}
           onReplay={replayFromPostSession}
           onHome={homeFromPostSession}
+          showUpgradeCTA={showPostSessionGrowthCta}
+          onOpenUpgrade={onGrowthPostSession}
         />
       </SafeAreaView>
     );
@@ -139,6 +172,8 @@ function AppInner() {
           progress={progress}
           onContinue={dismissTrackComplete}
           onRestartTrack={onRestartTrack}
+          showUpgradeCTA={showTrackCompleteGrowthCta}
+          onOpenUpgrade={onGrowthTrackComplete}
         />
       </SafeAreaView>
     );

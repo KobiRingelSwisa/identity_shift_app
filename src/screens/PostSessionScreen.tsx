@@ -4,6 +4,7 @@ import {
   Easing,
   Image,
   ImageBackground,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
@@ -28,6 +29,9 @@ type Props = {
   totalSessionsCompleted: number;
   onReplay: () => void;
   onHome: () => void;
+  /** Soft growth CTA — opens paywall when set (gated by parent) */
+  showUpgradeCTA?: boolean;
+  onOpenUpgrade?: () => void;
 };
 
 const SECONDARY = "#9CA3AF";
@@ -46,6 +50,8 @@ export function PostSessionScreen({
   streak,
   onReplay,
   onHome,
+  showUpgradeCTA,
+  onOpenUpgrade,
 }: Props) {
   const insets = useSafeAreaInsets();
 
@@ -185,6 +191,18 @@ export function PostSessionScreen({
         <Animated.View style={[styles.actions, { opacity: oCta }]}>
           <PrimaryButton variant="home" label="חזור" onPress={onHome} />
           <SecondaryButton label="חזור על האימון" onPress={onReplay} />
+          {showUpgradeCTA && onOpenUpgrade ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="תמיכה בפיתוח Identity Shift Plus"
+              onPress={onOpenUpgrade}
+              style={styles.upgradePress}
+            >
+              <Text style={styles.upgradeLink}>
+                תמיכה בפיתוח — Identity Shift+
+              </Text>
+            </Pressable>
+          ) : null}
         </Animated.View>
       </ScrollView>
     </ImageBackground>
@@ -296,5 +314,18 @@ const styles = StyleSheet.create({
     gap: 16,
     marginTop: 16,
     paddingBottom: 8,
+  },
+  upgradePress: {
+    alignSelf: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+  },
+  upgradeLink: {
+    fontSize: 14,
+    fontFamily: fonts.medium,
+    color: "rgba(124, 154, 255, 0.92)",
+    textAlign: "center",
+    writingDirection: "rtl",
+    textDecorationLine: "underline",
   },
 });

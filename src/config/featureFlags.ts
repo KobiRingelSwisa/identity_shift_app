@@ -12,4 +12,8 @@ export const featureFlags = {
   ENABLE_BILLING: true,
   ENABLE_PAYWALL: true,
   ENABLE_ADVANCED_ANALYTICS: true,
+  /** Soft upgrade link on post-session (non-blocking; conversion baseline) */
+  GROWTH_POST_SESSION_UPGRADE_CTA: true,
+  /** Soft upgrade link on track-complete summary */
+  GROWTH_TRACK_COMPLETE_UPGRADE_CTA: true,
 } as const;

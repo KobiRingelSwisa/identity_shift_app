@@ -29,7 +29,12 @@ export type PostSessionPayload = {
   totalSessionsCompleted: number;
 };
 
-export type PaywallTriggerReason = 'day_2' | 'day_7' | 'settings';
+export type PaywallTriggerReason =
+  | 'day_2'
+  | 'day_7'
+  | 'settings'
+  | 'growth_post_session'
+  | 'growth_track_complete';
 
 export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArgs) {
   const [inSession, setInSession] = useState(false);
@@ -155,11 +160,15 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
     setPaywallTrigger(null);
   }, []);
 
-  const openPaywallFromSettings = useCallback(() => {
+  const openPaywall = useCallback((reason: PaywallTriggerReason) => {
     if (featureFlags.ENABLE_PAYWALL) {
-      setPaywallTrigger('settings');
+      setPaywallTrigger(reason);
     }
   }, []);
+
+  const openPaywallFromSettings = useCallback(() => {
+    openPaywall('settings');
+  }, [openPaywall]);
 
   const replayFromPostSession = useCallback(() => {
     const d = postSession?.day ?? progress?.currentDay ?? 1;
@@ -183,6 +192,7 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
     homeFromPostSession,
     replayFromPostSession,
     dismissPaywall,
+    openPaywall,
     openPaywallFromSettings,
   };
 }
