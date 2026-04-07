@@ -1,6 +1,6 @@
 import type { PropsWithChildren } from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { theme, typography } from './theme';
+import { typography } from './theme';
 
 type TitleProps = PropsWithChildren<{
   variant?: 'hero' | 'screen';

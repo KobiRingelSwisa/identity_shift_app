@@ -2,7 +2,6 @@ import { getRevenueCatApiKey, getUseRevenueCat } from '../config/env';
 import { logger } from '../utils/logger';
 import type { BillingProvider } from './BillingProvider';
 import type { BillingOfferings, BillingPeriod, CustomerState } from './types';
-import { ENTITLEMENT_PREMIUM } from './types';
 import { MockBillingProvider } from './mockBilling';
 
 /**

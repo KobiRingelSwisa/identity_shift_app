@@ -6,9 +6,17 @@ import { theme, typography } from '../ui/theme';
 
 type Props = {
   onBack: () => void;
+  onOpenPrivacy: () => void;
+  onOpenTerms: () => void;
+  onOpenSubscriptionTerms: () => void;
 };
 
-export function AboutScreen({ onBack }: Props) {
+export function AboutScreen({
+  onBack,
+  onOpenPrivacy,
+  onOpenTerms,
+  onOpenSubscriptionTerms,
+}: Props) {
   return (
     <ScreenLayout background="gradient">
       <View style={styles.headerRow}>
@@ -34,6 +42,31 @@ export function AboutScreen({ onBack }: Props) {
           סיום יום, המסלול נשאר פתוח לחזרה; היום הבא במסלול נפתח ביום הקלנדרי
           הבא — כדי לשמור על קצב בר־קיימא.
         </Text>
+      </PremiumCard>
+
+      <PremiumCard style={styles.card}>
+        <Text style={styles.legalTitle}>מסמכים</Text>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenPrivacy}
+          style={styles.linkRow}
+        >
+          <Text style={styles.link}>מדיניות פרטיות</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenTerms}
+          style={styles.linkRow}
+        >
+          <Text style={styles.link}>תנאי שימוש</Text>
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onOpenSubscriptionTerms}
+          style={styles.linkRow}
+        >
+          <Text style={styles.link}>תנאי מנוי</Text>
+        </Pressable>
       </PremiumCard>
     </ScreenLayout>
   );
@@ -61,7 +94,7 @@ const styles = StyleSheet.create({
   },
   card: {
     padding: 22,
-    gap: 18,
+    gap: 12,
   },
   lead: {
     ...typography.body,
@@ -75,6 +108,23 @@ const styles = StyleSheet.create({
   p: {
     ...typography.body,
     lineHeight: 26,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  legalTitle: {
+    ...typography.screenTitle,
+    fontSize: 17,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+    marginBottom: 4,
+  },
+  linkRow: {
+    paddingVertical: 10,
+    alignSelf: 'stretch',
+  },
+  link: {
+    color: theme.accent,
+    fontSize: 16,
     textAlign: 'right',
     writingDirection: 'rtl',
   },

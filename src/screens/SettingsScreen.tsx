@@ -25,6 +25,7 @@ import {
   getAnalyticsConsent,
   setAnalyticsConsent,
 } from '../storage/analyticsConsent';
+import { featureFlags } from '../config/featureFlags';
 
 const PRESETS: { label: string; hour: number; minute: number }[] = [
   { label: '08:00', hour: 8, minute: 0 },
@@ -39,6 +40,7 @@ type Props = {
   onOpenPrivacy: () => void;
   onOpenTerms: () => void;
   onOpenSubscriptionTerms: () => void;
+  onOpenUpgrade: () => void;
 };
 
 export function SettingsScreen({
@@ -47,6 +49,7 @@ export function SettingsScreen({
   onOpenPrivacy,
   onOpenTerms,
   onOpenSubscriptionTerms,
+  onOpenUpgrade,
 }: Props) {
   const [settings, setSettings] = useState<ReminderSettings | null>(null);
   const [analyticsOn, setAnalyticsOn] = useState(true);
@@ -118,6 +121,17 @@ export function SettingsScreen({
         title="שקט מקומי"
         subtitle="התראות ומסלול — הכל נשמר במכשיר"
       />
+
+      {featureFlags.ENABLE_PAYWALL ? (
+        <PremiumCard style={styles.card}>
+          <Text style={styles.sectionTitle}>מנוי</Text>
+          <View style={styles.separator} />
+          <Text style={styles.trackHint}>
+            תמיכה בפיתוח ומסלולים נוספים בעתיד — בלי לנעול את האימון הבסיסי.
+          </Text>
+          <PrimaryButton label="שדרוג" onPress={onOpenUpgrade} />
+        </PremiumCard>
+      ) : null}
 
       <PremiumCard style={styles.card}>
         <Text style={styles.sectionTitle}>תזכורת יומית</Text>

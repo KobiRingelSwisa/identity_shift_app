@@ -10,8 +10,9 @@ import {
 import type { ConfidenceProgram } from '../session/types';
 import { getAnchorTextForDay } from '../session/loadProgram';
 import { trackEvent } from '../analytics/track';
-import { getBackend } from '../backend';
+import { getAppRepository } from '../repositories';
 import type { SessionRun } from '../backend/types';
+import { featureFlags } from '../config/featureFlags';
 
 type UseAppFlowArgs = {
   program: ConfidenceProgram;
@@ -28,7 +29,7 @@ export type PostSessionPayload = {
   totalSessionsCompleted: number;
 };
 
-export type PaywallTriggerReason = 'day_2' | 'day_7';
+export type PaywallTriggerReason = 'day_2' | 'day_7' | 'settings';
 
 export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArgs) {
   const [inSession, setInSession] = useState(false);
@@ -46,18 +47,20 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
       await saveOnboardingDone(commitment);
       await trackEvent('onboarding_completed', {
         commitment_days: commitment,
+        programId: program.track.id,
       });
       await refreshProgress();
     },
-    [refreshProgress]
+    [program.track.id, refreshProgress]
   );
 
   const startSession = useCallback(() => {
     void trackEvent('session_started', {
       day: Math.min(progress?.currentDay ?? 1, program.track.duration_days),
+      programId: program.track.id,
     });
     setInSession(true);
-  }, [progress?.currentDay, program.track.duration_days]);
+  }, [progress?.currentDay, program.track.duration_days, program.track.id]);
 
   const handleSessionComplete = useCallback(
     async (run: SessionRun) => {
@@ -68,25 +71,33 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
         program.track.duration_days
       );
 
-      await getBackend().createSessionRun(run);
+      await getAppRepository().createSessionRun(run);
 
       const anchorText =
         getAnchorTextForDay(program, dayToComplete) ?? 'נשימה. נוכחות.';
-      await getBackend().saveAnchor({
+      await getAppRepository().saveAnchor({
         programId: program.track.id,
         day: dayToComplete,
         text: anchorText,
       });
 
-      await trackEvent('session_completed', { day: dayToComplete });
+      await trackEvent('session_completed', {
+        day: dayToComplete,
+        programId: program.track.id,
+        sessionRunId: run.runId,
+      });
 
       const outcome = await completeDay(dayToComplete, program.track.duration_days);
 
-      await trackEvent('day_completed', { day: outcome.completedDay });
+      await trackEvent('day_completed', {
+        day: outcome.completedDay,
+        programId: program.track.id,
+      });
 
       if (outcome.streakAfter !== outcome.streakBefore) {
         await trackEvent('streak_updated', {
           streak: outcome.streakAfter,
+          programId: program.track.id,
         });
       }
 
@@ -94,12 +105,14 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
       await refreshProgress();
 
       if (dayToComplete === program.track.duration_days) {
-        pendingPaywallAfterTrackRef.current = true;
+        if (featureFlags.ENABLE_PAYWALL) {
+          pendingPaywallAfterTrackRef.current = true;
+        }
         setShowTrackComplete(true);
         return;
       }
 
-      if (dayToComplete === 2) {
+      if (dayToComplete === 2 && featureFlags.ENABLE_PAYWALL) {
         pendingPaywallAfterPostRef.current = true;
       }
 
@@ -120,17 +133,21 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
 
   const dismissTrackComplete = useCallback(() => {
     setShowTrackComplete(false);
-    if (pendingPaywallAfterTrackRef.current) {
+    if (pendingPaywallAfterTrackRef.current && featureFlags.ENABLE_PAYWALL) {
       pendingPaywallAfterTrackRef.current = false;
       setPaywallTrigger('day_7');
+    } else {
+      pendingPaywallAfterTrackRef.current = false;
     }
   }, []);
 
   const homeFromPostSession = useCallback(() => {
     setPostSession(null);
-    if (pendingPaywallAfterPostRef.current) {
+    if (pendingPaywallAfterPostRef.current && featureFlags.ENABLE_PAYWALL) {
       pendingPaywallAfterPostRef.current = false;
       setPaywallTrigger('day_2');
+    } else {
+      pendingPaywallAfterPostRef.current = false;
     }
   }, []);
 
@@ -138,12 +155,21 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
     setPaywallTrigger(null);
   }, []);
 
+  const openPaywallFromSettings = useCallback(() => {
+    if (featureFlags.ENABLE_PAYWALL) {
+      setPaywallTrigger('settings');
+    }
+  }, []);
+
   const replayFromPostSession = useCallback(() => {
     const d = postSession?.day ?? progress?.currentDay ?? 1;
-    void trackEvent('session_started', { day: d });
+    void trackEvent('session_started', {
+      day: d,
+      programId: program.track.id,
+    });
     setPostSession(null);
     setInSession(true);
-  }, [postSession?.day, progress?.currentDay]);
+  }, [postSession?.day, progress?.currentDay, program.track.id]);
 
   return {
     inSession,
@@ -157,5 +183,6 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
     homeFromPostSession,
     replayFromPostSession,
     dismissPaywall,
+    openPaywallFromSettings,
   };
 }

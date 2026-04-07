@@ -41,4 +41,8 @@ export class RemoteBackendAdapter implements Backend {
   async saveAnchor(_payload: SaveAnchorPayload): Promise<void> {
     throw new Error('RemoteBackendAdapter: not configured');
   }
+
+  async listSavedAnchors(_programId?: string): Promise<SaveAnchorPayload[]> {
+    return [];
+  }
 }

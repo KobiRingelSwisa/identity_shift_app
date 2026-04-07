@@ -25,11 +25,16 @@ export function SessionEngine({
 }: SessionEngineProps) {
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
   const answersRef = useRef<SessionAnswers>({});
+  const sessionRunIdRef = useRef(
+    `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`
+  );
   const startedAtRef = useRef<string>(new Date().toISOString());
   const completedRef = useRef(false);
   const lastIndexRef = useRef(0);
   const dayRef = useRef(day);
   dayRef.current = day;
+  const programIdRef = useRef(programId);
+  programIdRef.current = programId;
 
   const total = steps.length;
   const step = steps[currentStepIndex];
@@ -46,15 +51,20 @@ export function SessionEngine({
       step_type: s.type,
       day,
       index: currentStepIndex,
+      programId,
+      sessionRunId: sessionRunIdRef.current,
     });
-  }, [currentStepIndex, day, steps]);
+  }, [currentStepIndex, day, programId, steps]);
 
   useEffect(() => {
+    const runIdForCleanup = sessionRunIdRef.current;
     return () => {
       if (!completedRef.current) {
         void trackEvent('session_abandoned', {
           day: dayRef.current,
           last_step_index: lastIndexRef.current,
+          programId: programIdRef.current,
+          sessionRunId: runIdForCleanup,
         });
       }
     };
@@ -68,22 +78,24 @@ export function SessionEngine({
           step_id: key,
           day,
           value,
+          programId,
+          sessionRunId: sessionRunIdRef.current,
         });
       }
     },
-    [day]
+    [day, programId]
   );
 
   const goNext = useCallback(() => {
     if (currentStepIndex >= total - 1) {
       completedRef.current = true;
       const run: SessionRun = {
-        runId: `${Date.now()}-${Math.random().toString(36).slice(2, 11)}`,
+        runId: sessionRunIdRef.current,
         startedAt: startedAtRef.current,
         completedAt: new Date().toISOString(),
         programId,
         day,
-        steps: buildSessionStepRuns(steps, answersRef.current),
+        stepResponses: buildSessionStepRuns(steps, answersRef.current),
       };
       void Promise.resolve(onSessionComplete?.(run));
       return;

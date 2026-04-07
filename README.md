@@ -14,8 +14,11 @@ npx expo start
 ```bash
 npm run typecheck
 npm test
-npm run validate:program
+npm run lint
+npm run validate:content
 ```
+
+פקודות מלאות: [`docs/ENGINEERING_COMMANDS.md`](docs/ENGINEERING_COMMANDS.md).
 
 ## הגדרת Launch (סביבה)
 
@@ -23,26 +26,29 @@ npm run validate:program
 
 | משתנה | תיאור |
 |--------|--------|
+| `EXPO_PUBLIC_BILLING_PROVIDER` | `mock` (ברירת מחדל) או `revenuecat` |
 | `EXPO_PUBLIC_USE_REVENUECAT` | `true` כשמחברים RevenueCat |
-| `EXPO_PUBLIC_REVENUECAT_API_KEY` | מפתח SDK ציבורי (לא סוד שרת) |
+| `EXPO_PUBLIC_REVENUECAT_API_KEY` / `*_IOS` / `*_ANDROID` | מפתחות SDK (לא סוד שרת) |
 | `EXPO_PUBLIC_USE_REMOTE_BACKEND` | שמור לעתיד — כרגע persistence מקומי בלבד |
 
 כתובת תמיכה ב־Settings (mailto) היא placeholder — עדכן לדומיין אמיתי לפני השקה.
 
 ## ארכיטקטורה (תקציר)
 
-- **Backend מקומי:** `src/backend/` — `LocalBackendAdapter` על AsyncStorage; ריצות סשן (`SessionRun`) נשמרות בסיום אימון.
+- **נתונים:** `getAppRepository()` ב־`src/repositories/` → `LocalAppRepository` / `RemoteAppRepository`; מימוש מקומי ב־`src/backend/` (AsyncStorage). `SessionRun.stepResponses` נשמר בסיום אימון (כולל replay).
 - **בילינג:** `src/billing/` — Mock לפיתוח; מבנה מוכן ל־RevenueCat כשהמודול הנטיבי מחובר.
 - **אנליטיקה:** `src/analytics/track.ts` — מפת אירועים מטופסים; אפשר לכבות אנליטיקה לא קריטית בהגדרות (אירועים קריטיים מינימליים נשמרים).
 
-מסמך מפורט: `docs/ARCHITECTURE.md`, `docs/CURSOR_LAUNCH_BUILD_PROMPT_HE.md`.
+מסמכים: `docs/ARCHITECTURE.md`, `docs/LAUNCH_RUNBOOK.md`, `docs/MONETIZATION_SPEC.md`, `docs/ANALYTICS_EVENT_CATALOG.md`, `docs/CURSOR_LAUNCH_BUILD_PROMPT_HE.md`.
 
 ## Launch readiness (סטטוס מהיר)
 
 | סעיף | סטטוס |
 |------|--------|
 | `npm run typecheck` | ✅ |
+| `npm run lint` | ✅ |
 | `npm test` | ✅ |
+| `npm run validate:content` | ✅ |
 | Paywall + restore + entitlements (Mock) | ✅ |
 | אנליטיקה + הסכמה | ✅ |
 | דפים משפטיים + תמיכה (Settings) | ✅ |

@@ -3,13 +3,16 @@ import type {
   SaveAnchorPayload,
   SessionRun,
   UserProfile,
-} from './types';
+} from '../domain';
 
-export type Backend = {
-  getUserProfile(): Promise<UserProfile | null>;
-  upsertUserProfile(partial: Partial<UserProfile>): Promise<UserProfile>;
-  getProgramProgress(trackDurationDays: number): Promise<ProgramProgressSnapshot>;
-  upsertProgramProgress(
+/**
+ * Application data port (local or remote). Method names match launch architecture spec.
+ */
+export type AppRepository = {
+  getProfile(): Promise<UserProfile | null>;
+  upsertProfile(partial: Partial<UserProfile>): Promise<UserProfile>;
+  getProgress(trackDurationDays: number): Promise<ProgramProgressSnapshot>;
+  upsertProgress(
     trackDurationDays: number,
     partial: Partial<ProgramProgressSnapshot>
   ): Promise<void>;

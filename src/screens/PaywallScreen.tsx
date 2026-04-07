@@ -12,55 +12,102 @@ import { PrimaryButton } from '../ui/PrimaryButton';
 import { SecondaryButton } from '../ui/SecondaryButton';
 import { theme, typography } from '../ui/theme';
 import { getBillingProvider } from '../billing/getBillingProvider';
+import { useBilling } from '../billing/useBilling';
 import type { BillingPeriod } from '../billing/types';
 import { trackEvent } from '../analytics/track';
 import type { PaywallTriggerReason } from '../app/useAppFlow';
 
 type Props = {
   reason: PaywallTriggerReason;
+  programId: string;
   onClose: () => void;
 };
 
-export function PaywallScreen({ reason, onClose }: Props) {
+export function PaywallScreen({ reason, programId, onClose }: Props) {
+  const { offerings, loading, error, refresh } = useBilling();
   const [plan, setPlan] = useState<BillingPeriod>('yearly');
-  const [loading, setLoading] = useState(false);
+  const [purchaseBusy, setPurchaseBusy] = useState(false);
+  const [restoreBusy, setRestoreBusy] = useState(false);
+  const [inlineError, setInlineError] = useState<string | null>(null);
 
   useEffect(() => {
-    void trackEvent('paywall_viewed', { reason });
-  }, [reason]);
+    void trackEvent('paywall_viewed', { reason, programId });
+  }, [reason, programId]);
 
   const onPurchase = useCallback(async () => {
-    setLoading(true);
+    setInlineError(null);
+    setPurchaseBusy(true);
     try {
-      await trackEvent('paywall_cta_clicked', { plan });
-      await trackEvent('purchase_started', { plan });
+      await trackEvent('paywall_cta_clicked', { plan, programId });
+      await trackEvent('purchase_started', { plan, programId });
       await getBillingProvider().purchasePackage(plan);
-      await trackEvent('purchase_success', { plan });
+      await trackEvent('purchase_success', { plan, programId });
       onClose();
     } catch (e) {
-      await trackEvent('purchase_failed', {
-        reason: e instanceof Error ? e.message : 'unknown',
-      });
+      const msg = e instanceof Error ? e.message : 'unknown';
+      setInlineError(msg);
+      await trackEvent('purchase_failed', { reason: msg, programId });
     } finally {
-      setLoading(false);
+      setPurchaseBusy(false);
     }
-  }, [plan, onClose]);
+  }, [plan, programId, onClose]);
 
   const onRestore = useCallback(async () => {
-    setLoading(true);
+    setInlineError(null);
+    setRestoreBusy(true);
     try {
-      await trackEvent('restore_started');
+      await trackEvent('restore_started', { programId });
       await getBillingProvider().restorePurchases();
-      await trackEvent('restore_success');
+      await trackEvent('restore_success', { programId });
       onClose();
     } catch (e) {
-      await trackEvent('restore_failed', {
-        reason: e instanceof Error ? e.message : 'unknown',
-      });
+      const msg = e instanceof Error ? e.message : 'unknown';
+      setInlineError(msg);
+      await trackEvent('restore_failed', { reason: msg, programId });
     } finally {
-      setLoading(false);
+      setRestoreBusy(false);
     }
-  }, [onClose]);
+  }, [programId, onClose]);
+
+  const busy = purchaseBusy || restoreBusy;
+
+  if (loading && !offerings && !error) {
+    return (
+      <ScreenLayout background="gradient">
+        <View style={styles.centered}>
+          <ActivityIndicator color={theme.accent} />
+          <Text style={styles.muted}>טוען הצעות…</Text>
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (error && !offerings) {
+    return (
+      <ScreenLayout background="gradient">
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>{error}</Text>
+          <PrimaryButton label="נסה שוב" onPress={() => void refresh()} />
+          <View style={styles.spacer} />
+          <SecondaryButton label="סגור" onPress={onClose} />
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  if (!offerings) {
+    return (
+      <ScreenLayout background="gradient">
+        <View style={styles.centered}>
+          <Text style={styles.errorText}>אין חבילות זמינות כרגע.</Text>
+          <SecondaryButton label="סגור" onPress={onClose} />
+        </View>
+      </ScreenLayout>
+    );
+  }
+
+  const monthlyLabel = `${offerings.monthly.title} — ${offerings.monthly.price}`;
+  const yearlyLabel = `${offerings.yearly.title} — ${offerings.yearly.price}`;
 
   return (
     <ScreenLayout background="gradient">
@@ -74,8 +121,9 @@ export function PaywallScreen({ reason, onClose }: Props) {
             accessibilityLabel="סגור"
             onPress={onClose}
             hitSlop={12}
+            disabled={busy}
           >
-            <Text style={styles.close}>סגור</Text>
+            <Text style={[styles.close, busy && styles.disabled]}>סגור</Text>
           </Pressable>
         </View>
 
@@ -89,19 +137,21 @@ export function PaywallScreen({ reason, onClose }: Props) {
           <Pressable
             accessibilityRole="button"
             onPress={() => setPlan('monthly')}
+            disabled={busy}
             style={[styles.chip, plan === 'monthly' && styles.chipOn]}
           >
             <Text style={[styles.chipText, plan === 'monthly' && styles.chipTextOn]}>
-              חודשי
+              {monthlyLabel}
             </Text>
           </Pressable>
           <Pressable
             accessibilityRole="button"
             onPress={() => setPlan('yearly')}
+            disabled={busy}
             style={[styles.chip, plan === 'yearly' && styles.chipOn]}
           >
             <Text style={[styles.chipText, plan === 'yearly' && styles.chipTextOn]}>
-              שנתי
+              {yearlyLabel}
             </Text>
           </Pressable>
         </View>
@@ -110,7 +160,11 @@ export function PaywallScreen({ reason, onClose }: Props) {
           אפשר לסגור בכל עת — האימון הבסיסי נשאר זמין.
         </Text>
 
-        {loading ? (
+        {inlineError ? (
+          <Text style={styles.errorText}>{inlineError}</Text>
+        ) : null}
+
+        {busy ? (
           <ActivityIndicator color={theme.accent} style={styles.loader} />
         ) : (
           <>
@@ -128,6 +182,13 @@ export function PaywallScreen({ reason, onClose }: Props) {
 }
 
 const styles = StyleSheet.create({
+  centered: {
+    flex: 1,
+    padding: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 16,
+  },
   scroll: {
     paddingBottom: 40,
     gap: 16,
@@ -142,6 +203,9 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '500',
     writingDirection: 'rtl',
+  },
+  disabled: {
+    opacity: 0.5,
   },
   title: {
     ...typography.screenTitle,
@@ -163,11 +227,13 @@ const styles = StyleSheet.create({
   },
   chip: {
     paddingVertical: 10,
-    paddingHorizontal: 18,
+    paddingHorizontal: 14,
     borderRadius: 12,
     backgroundColor: theme.surfaceElevated,
     borderWidth: 1,
     borderColor: theme.surfaceBorder,
+    flex: 1,
+    minWidth: 0,
   },
   chipOn: {
     borderColor: theme.accent,
@@ -175,8 +241,9 @@ const styles = StyleSheet.create({
   },
   chipText: {
     color: theme.textSecondary,
-    fontSize: 15,
+    fontSize: 14,
     writingDirection: 'rtl',
+    textAlign: 'right',
   },
   chipTextOn: {
     color: theme.text,
@@ -188,10 +255,21 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     writingDirection: 'rtl',
   },
+  errorText: {
+    ...typography.caption,
+    color: '#f87171',
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
   loader: {
     marginVertical: 24,
   },
   spacer: {
     height: 8,
+  },
+  muted: {
+    color: theme.textSecondary,
+    marginTop: 12,
+    writingDirection: 'rtl',
   },
 });

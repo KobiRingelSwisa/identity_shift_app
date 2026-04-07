@@ -73,4 +73,33 @@ export class LocalBackendAdapter {
       })
     );
   }
+
+  async listSavedAnchors(programId?: string): Promise<SaveAnchorPayload[]> {
+    const keys = await AsyncStorage.getAllKeys();
+    const prefix = ANCHOR_PREFIX;
+    const anchorKeys = keys.filter(
+      (k) =>
+        k.startsWith(prefix) &&
+        (programId == null || k.startsWith(`${prefix}${programId}-`))
+    );
+    if (anchorKeys.length === 0) return [];
+    const pairs = await AsyncStorage.multiGet(anchorKeys);
+    const out: SaveAnchorPayload[] = [];
+    for (const [, val] of pairs) {
+      if (!val) continue;
+      try {
+        const parsed = JSON.parse(val) as SaveAnchorPayload & {
+          savedAtIso?: string;
+        };
+        out.push({
+          programId: parsed.programId,
+          day: parsed.day,
+          text: parsed.text,
+        });
+      } catch {
+        /* skip */
+      }
+    }
+    return out.sort((a, b) => a.day - b.day);
+  }
 }

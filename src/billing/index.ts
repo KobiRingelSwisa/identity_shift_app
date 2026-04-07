@@ -3,3 +3,4 @@ export { getBillingProvider, resetBillingProviderForTests } from './getBillingPr
 export { hasPremiumAccess, canAccessPremiumTracks } from './entitlements';
 export { ENTITLEMENT_PREMIUM } from './types';
 export type { BillingPeriod, BillingPackage, CustomerState } from './types';
+export { useBilling } from './useBilling';

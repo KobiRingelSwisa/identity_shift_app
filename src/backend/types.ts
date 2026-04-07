@@ -31,7 +31,8 @@ export type SessionRun = {
   completedAt: string;
   programId: string;
   day: number;
-  steps: SessionStepRun[];
+  /** Per launch spec; legacy persisted key may be `steps`. */
+  stepResponses: SessionStepRun[];
 };
 
 export type SaveAnchorPayload = {

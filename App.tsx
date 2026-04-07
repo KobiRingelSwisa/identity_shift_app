@@ -28,6 +28,7 @@ import { useAppBootstrap } from './src/app/useAppBootstrap';
 import { useAppFlow } from './src/app/useAppFlow';
 import { resetTrackProgress } from './src/storage/progress';
 import { theme } from './src/ui/theme';
+import { featureFlags } from './src/config/featureFlags';
 
 I18nManager.allowRTL(true);
 I18nManager.forceRTL(true);
@@ -50,6 +51,7 @@ function AppInner() {
     reminderPromptSeen,
   } = useAppBootstrap();
   const [panel, setPanel] = useState<Panel>('none');
+  const [legalFrom, setLegalFrom] = useState<'settings' | 'about'>('settings');
 
   const {
     inSession,
@@ -63,6 +65,7 @@ function AppInner() {
     replayFromPostSession,
     paywallTrigger,
     dismissPaywall,
+    openPaywallFromSettings,
   } = useAppFlow({ program, progress, refreshProgress });
 
   const onRestartTrack = useCallback(async () => {
@@ -99,10 +102,14 @@ function AppInner() {
     );
   }
 
-  if (paywallTrigger != null) {
+  if (paywallTrigger != null && featureFlags.ENABLE_PAYWALL) {
     return (
       <SafeAreaView style={styles.safe}>
-        <PaywallScreen reason={paywallTrigger} onClose={dismissPaywall} />
+        <PaywallScreen
+          reason={paywallTrigger}
+          programId={program.track.id}
+          onClose={dismissPaywall}
+        />
       </SafeAreaView>
     );
   }
@@ -158,9 +165,19 @@ function AppInner() {
         <SettingsScreen
           onBack={() => setPanel('none')}
           onProgressReset={refreshProgress}
-          onOpenPrivacy={() => setPanel('privacy')}
-          onOpenTerms={() => setPanel('terms')}
-          onOpenSubscriptionTerms={() => setPanel('subscription_terms')}
+          onOpenPrivacy={() => {
+            setLegalFrom('settings');
+            setPanel('privacy');
+          }}
+          onOpenTerms={() => {
+            setLegalFrom('settings');
+            setPanel('terms');
+          }}
+          onOpenSubscriptionTerms={() => {
+            setLegalFrom('settings');
+            setPanel('subscription_terms');
+          }}
+          onOpenUpgrade={openPaywallFromSettings}
         />
       </SafeAreaView>
     );
@@ -169,7 +186,7 @@ function AppInner() {
   if (panel === 'privacy') {
     return (
       <SafeAreaView style={styles.safe}>
-        <PrivacyPolicyScreen onBack={() => setPanel('settings')} />
+        <PrivacyPolicyScreen onBack={() => setPanel(legalFrom)} />
       </SafeAreaView>
     );
   }
@@ -177,7 +194,7 @@ function AppInner() {
   if (panel === 'terms') {
     return (
       <SafeAreaView style={styles.safe}>
-        <TermsOfUseScreen onBack={() => setPanel('settings')} />
+        <TermsOfUseScreen onBack={() => setPanel(legalFrom)} />
       </SafeAreaView>
     );
   }
@@ -185,7 +202,7 @@ function AppInner() {
   if (panel === 'subscription_terms') {
     return (
       <SafeAreaView style={styles.safe}>
-        <SubscriptionTermsScreen onBack={() => setPanel('settings')} />
+        <SubscriptionTermsScreen onBack={() => setPanel(legalFrom)} />
       </SafeAreaView>
     );
   }
@@ -193,7 +210,21 @@ function AppInner() {
   if (panel === 'about') {
     return (
       <SafeAreaView style={styles.safe}>
-        <AboutScreen onBack={() => setPanel('none')} />
+        <AboutScreen
+          onBack={() => setPanel('none')}
+          onOpenPrivacy={() => {
+            setLegalFrom('about');
+            setPanel('privacy');
+          }}
+          onOpenTerms={() => {
+            setLegalFrom('about');
+            setPanel('terms');
+          }}
+          onOpenSubscriptionTerms={() => {
+            setLegalFrom('about');
+            setPanel('subscription_terms');
+          }}
+        />
       </SafeAreaView>
     );
   }

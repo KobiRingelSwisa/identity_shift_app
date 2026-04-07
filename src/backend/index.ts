@@ -1,17 +1,23 @@
+import { getAppRepository, resetAppRepositoryForTests } from '../repositories';
 import type { Backend } from './Backend';
-import { LocalBackendAdapter } from './localBackend';
 
-let singleton: Backend | null = null;
-
-/** Local-first persistence. `RemoteBackendAdapter` is a future swap — keep Local until API exists. */
+/** @deprecated Prefer `getAppRepository()` from `src/repositories`. */
 export function getBackend(): Backend {
-  if (singleton) return singleton;
-  singleton = new LocalBackendAdapter();
-  return singleton;
+  const r = getAppRepository();
+  return {
+    getUserProfile: () => r.getProfile(),
+    upsertUserProfile: (p) => r.upsertProfile(p),
+    getProgramProgress: (d) => r.getProgress(d),
+    upsertProgramProgress: (d, p) => r.upsertProgress(d, p),
+    createSessionRun: (run) => r.createSessionRun(run),
+    listSessionRuns: (l) => r.listSessionRuns(l),
+    saveAnchor: (p) => r.saveAnchor(p),
+    listSavedAnchors: (id) => r.listSavedAnchors(id),
+  };
 }
 
 export function resetBackendForTests(): void {
-  singleton = null;
+  resetAppRepositoryForTests();
 }
 
 export type { Backend } from './Backend';

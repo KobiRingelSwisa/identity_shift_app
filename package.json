@@ -9,11 +9,15 @@
     "web": "expo start --web",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "validate:program": "tsx scripts/validate-program-schema.ts"
+    "validate:program": "tsx scripts/validate-program-schema.ts",
+    "validate:content": "tsx scripts/validate-program-schema.ts",
+    "lint": "expo lint"
   },
   "dependencies": {
     "@expo-google-fonts/assistant": "^0.4.1",
     "@react-native-async-storage/async-storage": "2.2.0",
+    "eslint": "^9.39.4",
+    "eslint-config-expo": "~10.0.0",
     "expo": "~54.0.33",
     "expo-av": "~16.0.8",
     "expo-constants": "~18.0.13",
