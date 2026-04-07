@@ -6,7 +6,7 @@ import { Title } from '../ui/Title';
 import { BodyText } from '../ui/BodyText';
 import { PrimaryButton } from '../ui/PrimaryButton';
 import { OnboardingProgressDots } from '../ui/OnboardingProgressDots';
-import { theme, typography } from '../ui/theme';
+import { fonts, theme, typography } from '../ui/theme';
 import type { CommitmentLength } from '../storage/progress';
 
 const TOTAL_STEPS = 5;
@@ -151,7 +151,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
     color: theme.accent,
     fontSize: 14,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     textAlign: 'right',
     writingDirection: 'rtl',
   },
@@ -174,7 +174,7 @@ const styles = StyleSheet.create({
   chipLabel: {
     color: theme.text,
     fontSize: 17,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     textAlign: 'right',
     writingDirection: 'rtl',
   },

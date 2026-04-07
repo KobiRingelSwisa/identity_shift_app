@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import * as Haptics from 'expo-haptics';
 import {
   completeDay,
   loadProgress,
@@ -78,6 +79,7 @@ export function useAppFlow({ program, progress, refreshProgress }: UseAppFlowArg
 
     const fresh = await loadProgress(program.track.duration_days);
 
+    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     setPostSession({
       day: dayToComplete,
       anchorText:

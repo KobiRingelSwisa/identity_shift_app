@@ -3,6 +3,8 @@ import {
   Animated,
   Dimensions,
   Easing,
+  Image,
+  ImageBackground,
   Pressable,
   StyleSheet,
   Text,
@@ -14,7 +16,10 @@ import { PrimaryButton } from "../ui/PrimaryButton";
 import type { AppProgress } from "../storage/progress";
 import { isDailyNextLocked } from "../storage/progress";
 import type { ConfidenceProgram } from "../session/types";
-import { theme } from "../ui/theme";
+import { fonts, theme } from "../ui/theme";
+
+const HOME_HERO_BG = require("../../assets/images/backgrounds/home-hero-bg.png");
+const NOISE_OVERLAY = require("../../assets/images/textures/noise-overlay.png");
 
 type Props = {
   progress: AppProgress;
@@ -25,14 +30,14 @@ type Props = {
 };
 
 const WINDOW_H = Dimensions.get("window").height;
-const HERO_MIN_H = Math.round(WINDOW_H * 0.3);
+const HERO_MIN_H = Math.round(WINDOW_H * 0.34);
 
 /** Single intentional copy path — no dynamic theme lines */
-const HERO_CAPTION = "הרגע שלך מתחיל כאן";
+const HERO_CAPTION = "בוא נתחיל ברגע אחד לעצמך";
 const FOCUS_LINE = "היום מחזקים נוכחות גם כשאין ודאות";
 
-const ENTRY_MS = 400;
-const STAGGER_MS = 70;
+const ENTRY_MS = 300;
+const STAGGER_MS = 90;
 const ACTION_DELAY_MS = 140;
 const PULSE_UP_MS = 520;
 const PULSE_PAUSE_MS = 2800;
@@ -148,13 +153,36 @@ export function MainHome({
       <ScreenLayout background="gradient" footer={null}>
         <View style={styles.stack}>
           <View style={styles.heroShell}>
-            <AccentGlow intensity={0.75} />
+            <ImageBackground
+              source={HOME_HERO_BG}
+              style={styles.heroImageBg}
+              resizeMode="cover"
+              imageStyle={styles.heroImageStyle}
+            >
+              <View
+                style={[StyleSheet.absoluteFillObject, styles.heroDim]}
+                pointerEvents="none"
+              />
+              <View
+                style={[StyleSheet.absoluteFillObject, styles.heroNoiseWrap]}
+                pointerEvents="none"
+              >
+                <Image
+                  source={NOISE_OVERLAY}
+                  style={StyleSheet.absoluteFillObject}
+                  resizeMode="cover"
+                />
+              </View>
+            </ImageBackground>
+            <AccentGlow intensity={0.66} />
             <Animated.View
-              style={[styles.heroBlock, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
+              style={[styles.heroFade, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
             >
               {topLinks}
-              <Text style={styles.caption}>המסלול</Text>
-              <Text style={styles.heroTitle}>הושלם</Text>
+              <View style={styles.heroCopy}>
+                <Text style={styles.caption}>המסלול</Text>
+                <Text style={styles.heroTitle}>הושלם</Text>
+              </View>
             </Animated.View>
           </View>
           <Animated.View style={{ opacity: cardOpacity, alignSelf: "stretch" }}>
@@ -203,14 +231,39 @@ export function MainHome({
       <View style={styles.stack}>
         {/* 1. Hero */}
         <View style={styles.heroShell}>
-          <AccentGlow intensity={0.75} />
+          <ImageBackground
+            source={HOME_HERO_BG}
+            style={styles.heroImageBg}
+            resizeMode="cover"
+            imageStyle={styles.heroImageStyle}
+          >
+            <View
+              style={[StyleSheet.absoluteFillObject, styles.heroDim]}
+              pointerEvents="none"
+            />
+            <View
+              style={[StyleSheet.absoluteFillObject, styles.heroNoiseWrap]}
+              pointerEvents="none"
+            >
+              <Image
+                source={NOISE_OVERLAY}
+                style={StyleSheet.absoluteFillObject}
+                resizeMode="cover"
+              />
+            </View>
+          </ImageBackground>
+          <AccentGlow intensity={0.66} />
           <Animated.View
-            style={[styles.heroBlock, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
+            style={[styles.heroFade, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
           >
             {topLinks}
-            <Text style={styles.caption}>{HERO_CAPTION}</Text>
-            <Text style={styles.heroTitle}>{`יום ${dayToShow}`}</Text>
-            <Text style={styles.focusLine}>{FOCUS_LINE}</Text>
+            <View style={styles.heroCopy}>
+              <Text style={styles.caption}>{HERO_CAPTION}</Text>
+              <Text style={styles.heroTitle}>{`יום ${dayToShow}`}</Text>
+              <Text style={styles.focusLine} numberOfLines={2}>
+                {FOCUS_LINE}
+              </Text>
+            </View>
           </Animated.View>
         </View>
 
@@ -221,9 +274,6 @@ export function MainHome({
               {`כבר ${progress.streak} ימים ברצף`}
             </Text>
             <Text style={styles.cardLine2}>התקדמות נבנית יום אחרי יום</Text>
-            <Text style={styles.cardLine3}>
-              {`יום ${dayToShow} מתוך ${duration_days}`}
-            </Text>
           </View>
         </Animated.View>
       </View>
@@ -235,79 +285,100 @@ const styles = StyleSheet.create({
   stack: {
     alignSelf: "stretch",
     gap: 24,
-    paddingTop: 8,
+    paddingTop: 12,
   },
   heroShell: {
     alignSelf: "stretch",
     position: "relative",
+    overflow: "hidden",
+    borderRadius: 20,
   },
-  heroBlock: {
+  heroImageBg: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroImageStyle: {
+    borderRadius: 20,
+  },
+  heroDim: {
+    backgroundColor: "rgba(0,0,0,0.35)",
+  },
+  heroNoiseWrap: {
+    opacity: 0.02,
+  },
+  heroFade: {
     paddingTop: 0,
     justifyContent: "flex-start",
     alignItems: "flex-end",
+    alignSelf: "stretch",
+  },
+  heroCopy: {
     gap: 8,
+    alignSelf: "stretch",
+    alignItems: "flex-end",
   },
   topLinks: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignSelf: "stretch",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 16,
   },
   topLink: {
     fontSize: 15,
-    fontWeight: "500",
+    fontFamily: fonts.medium,
+    lineHeight: 20,
     color: CAPTION_COLOR,
     writingDirection: "rtl",
   },
   caption: {
     fontSize: 13,
+    fontFamily: fonts.medium,
+    lineHeight: 18,
     color: CAPTION_COLOR,
     textAlign: "right",
     writingDirection: "rtl",
   },
   heroTitle: {
     fontSize: 32,
-    fontWeight: "600",
+    fontFamily: fonts.semiBold,
+    lineHeight: 38,
     color: theme.text,
     textAlign: "right",
     writingDirection: "rtl",
   },
   focusLine: {
     fontSize: 16,
+    fontFamily: fonts.regular,
+    lineHeight: 22,
     color: "#FFFFFF",
     textAlign: "right",
     writingDirection: "rtl",
-    lineHeight: 24,
   },
   focusCard: {
-    padding: 16,
-    backgroundColor: "rgba(255,255,255,0.045)",
+    padding: 17,
+    backgroundColor: "rgba(255,255,255,0.036)",
     borderRadius: 16,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: "rgba(255,255,255,0.05)",
     alignSelf: "stretch",
     alignItems: "flex-end",
     gap: 8,
   },
   cardLine1: {
     fontSize: 14,
+    fontFamily: fonts.medium,
+    lineHeight: 20,
     color: CAPTION_COLOR,
     textAlign: "right",
     writingDirection: "rtl",
   },
   cardLine2: {
     fontSize: 15,
-    color: "rgba(255,255,255,0.92)",
+    fontFamily: fonts.regular,
+    lineHeight: 21,
+    color: "rgba(255,255,255,0.88)",
     textAlign: "right",
     writingDirection: "rtl",
-  },
-  cardLine3: {
-    fontSize: 12,
-    color: "rgba(156, 163, 175, 0.85)",
-    textAlign: "right",
-    writingDirection: "rtl",
-    marginTop: 2,
   },
   footerAction: {
     alignSelf: "stretch",
@@ -321,7 +392,8 @@ const styles = StyleSheet.create({
   },
   lockedTitle: {
     fontSize: 20,
-    fontWeight: "500",
+    fontFamily: fonts.medium,
+    lineHeight: 26,
     color: theme.text,
     textAlign: "right",
     writingDirection: "rtl",
@@ -329,6 +401,8 @@ const styles = StyleSheet.create({
   lockedSubtitle: {
     marginTop: 8,
     fontSize: 14,
+    fontFamily: fonts.regular,
+    lineHeight: 20,
     color: CAPTION_COLOR,
     textAlign: "right",
     writingDirection: "rtl",

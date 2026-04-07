@@ -1,6 +1,6 @@
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
-import { theme } from './theme';
+import { fonts, theme } from './theme';
 
 const PRESS_SCALE = 0.97;
 const PRESS_MS = 120;
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   label: {
     color: theme.textSecondary,
     fontSize: 16,
-    fontWeight: '500',
+    fontFamily: fonts.medium,
     textAlign: 'center',
     writingDirection: 'rtl',
   },

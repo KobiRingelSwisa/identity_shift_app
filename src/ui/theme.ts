@@ -3,6 +3,13 @@
  * Typography & spacing scale for RTL-first layouts.
  */
 
+/** Assistant (Google Fonts) — load in App via @expo-google-fonts/assistant */
+export const fonts = {
+  regular: 'Assistant_400Regular',
+  medium: 'Assistant_500Medium',
+  semiBold: 'Assistant_600SemiBold',
+} as const;
+
 export const theme = {
   background: '#0B0F1A',
   backgroundSecondary: '#111827',
@@ -63,35 +70,36 @@ export const spacing = {
   xl: 32,
 } as const;
 
-/** Typography — all RTL via components (textAlign: 'right' / center where needed). */
+/** Typography — Assistant weights only; airy line-heights for Hebrew RTL */
 export const typography = {
   heroTitle: {
+    fontFamily: fonts.semiBold,
     fontSize: 30,
-    fontWeight: '600' as const,
-    lineHeight: 36,
+    lineHeight: 38,
     color: theme.text,
   },
   screenTitle: {
+    fontFamily: fonts.medium,
     fontSize: 23,
-    fontWeight: '500' as const,
     lineHeight: 30,
     color: theme.text,
   },
   body: {
+    fontFamily: fonts.regular,
     fontSize: 15,
-    fontWeight: '400' as const,
-    lineHeight: 24,
+    lineHeight: 22,
     color: theme.textSecondary,
   },
   caption: {
+    fontFamily: fonts.regular,
     fontSize: 13,
     lineHeight: 18,
     color: theme.textSecondary,
   },
   anchor: {
-    fontSize: 28,
-    fontWeight: '500' as const,
-    lineHeight: 38,
+    fontFamily: fonts.medium,
+    fontSize: 31,
+    lineHeight: 37,
     color: theme.text,
   },
 } as const;

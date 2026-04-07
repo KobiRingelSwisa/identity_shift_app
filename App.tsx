@@ -1,6 +1,12 @@
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, I18nManager, StyleSheet, View } from 'react-native';
 import {
+  useFonts,
+  Assistant_400Regular,
+  Assistant_500Medium,
+  Assistant_600SemiBold,
+} from '@expo-google-fonts/assistant';
+import {
   SafeAreaProvider,
   SafeAreaView,
 } from 'react-native-safe-area-context';
@@ -158,6 +164,20 @@ function AppInner() {
 }
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Assistant_400Regular,
+    Assistant_500Medium,
+    Assistant_600SemiBold,
+  });
+
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.fontLoading}>
+        <ActivityIndicator color={theme.accent} />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider style={styles.safe}>
       <AppInner />
@@ -166,6 +186,12 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  fontLoading: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: theme.background,
+  },
   safe: {
     flex: 1,
     backgroundColor: theme.background,

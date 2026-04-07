@@ -1,7 +1,8 @@
 import { useRef } from 'react';
 import { Animated, Pressable, StyleSheet, Text } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { LinearGradient } from 'expo-linear-gradient';
-import { theme } from './theme';
+import { fonts, theme } from './theme';
 
 const PRESS_SCALE = 0.97;
 const PRESS_MS = 120;
@@ -46,11 +47,17 @@ export function PrimaryButton({
     }).start();
   };
 
+  const handlePress = () => {
+    if (disabled) return;
+    void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    onPress();
+  };
+
   return (
     <Pressable
       accessibilityRole="button"
       disabled={disabled}
-      onPress={onPress}
+      onPress={handlePress}
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       style={styles.pressableWrap}
@@ -68,7 +75,9 @@ export function PrimaryButton({
           colors={
             disabled
               ? [theme.backgroundSecondary, theme.backgroundSecondary]
-              : ['rgba(124, 154, 255, 0.82)', 'rgba(34, 211, 238, 0.65)']
+              : home
+                ? ['rgba(124, 154, 255, 0.88)', 'rgba(34, 211, 238, 0.72)']
+                : ['rgba(124, 154, 255, 0.82)', 'rgba(34, 211, 238, 0.65)']
           }
           start={{ x: 0, y: 0.5 }}
           end={{ x: 1, y: 0.5 }}
@@ -123,12 +132,14 @@ const styles = StyleSheet.create({
   label: {
     color: theme.text,
     fontSize: 16,
-    fontWeight: '600',
+    lineHeight: 20,
+    fontFamily: fonts.medium,
     textAlign: 'center',
     writingDirection: 'rtl',
   },
   labelLarge: {
     fontSize: 17,
-    fontWeight: '600',
+    lineHeight: 22,
+    fontFamily: fonts.medium,
   },
 });
