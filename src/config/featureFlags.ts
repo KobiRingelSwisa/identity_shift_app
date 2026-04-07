@@ -3,8 +3,8 @@
  * When `USE_REMOTE_REPOSITORY` is true, `getAppRepository()` uses the remote adapter (must be configured).
  */
 export const featureFlags = {
-  /** Second track id when premium content ships */
-  moneyTrackPreview: false,
+  /** Teaser row on home for a future premium track (gated by entitlement) */
+  moneyTrackPreview: true,
   /** Soft paywall experiments */
   paywallExperiments: false,
   /** Swap to remote API when backend exists */

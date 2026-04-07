@@ -17,6 +17,9 @@ import type { AppProgress } from "../storage/progress";
 import { isDailyNextLocked } from "../storage/progress";
 import type { ConfidenceProgram } from "../session/types";
 import { fonts, theme } from "../ui/theme";
+import { featureFlags } from "../config/featureFlags";
+import { usePremiumEntitlement } from "../hooks/usePremiumEntitlement";
+import { PREMIUM_TRACK_PLACEHOLDER } from "../data/trackRegistry";
 
 const HOME_HERO_BG = require("../../assets/images/backgrounds/home-hero-bg.png");
 const NOISE_OVERLAY = require("../../assets/images/textures/noise-overlay.png");
@@ -27,6 +30,8 @@ type Props = {
   onStartSession: () => void;
   onOpenSettings: () => void;
   onOpenAbout: () => void;
+  /** Opens paywall when user taps upgrade on gated premium teaser */
+  onOpenPremiumUpgrade?: () => void;
 };
 
 const WINDOW_H = Dimensions.get("window").height;
@@ -51,7 +56,9 @@ export function MainHome({
   onStartSession,
   onOpenSettings,
   onOpenAbout,
+  onOpenPremiumUpgrade,
 }: Props) {
+  const { premium, loading: premiumLoading } = usePremiumEntitlement();
   const { duration_days } = program.track;
   const done = progress.currentDay > duration_days;
   const dayToShow = Math.min(progress.currentDay, duration_days);
@@ -276,6 +283,41 @@ export function MainHome({
             <Text style={styles.cardLine2}>התקדמות נבנית יום אחרי יום</Text>
           </View>
         </Animated.View>
+
+        {featureFlags.moneyTrackPreview &&
+        featureFlags.ENABLE_PAYWALL &&
+        onOpenPremiumUpgrade ? (
+          <Animated.View style={{ opacity: cardOpacity, alignSelf: "stretch" }}>
+            <View style={styles.premiumTeaserCard}>
+              <Text style={styles.premiumTeaserTitle}>
+                {PREMIUM_TRACK_PLACEHOLDER.titleHe}
+              </Text>
+              <Text style={styles.premiumTeaserSub}>
+                {PREMIUM_TRACK_PLACEHOLDER.subtitleHe}
+              </Text>
+              {premiumLoading ? (
+                <Text style={styles.premiumTeaserMuted}>טוען…</Text>
+              ) : premium ? (
+                <Text style={styles.premiumTeaserMuted}>
+                  בקרוב — תוכן יופיע כאן כשיהיה זמין.
+                </Text>
+              ) : (
+                <>
+                  <Text style={styles.premiumTeaserMuted}>
+                    זמין במנוי Identity Shift+
+                  </Text>
+                  <View style={styles.premiumTeaserCta}>
+                    <PrimaryButton
+                      variant="home"
+                      label="שדרוג"
+                      onPress={onOpenPremiumUpgrade}
+                    />
+                  </View>
+                </>
+              )}
+            </View>
+          </Animated.View>
+        ) : null}
       </View>
     </ScreenLayout>
   );
@@ -379,6 +421,44 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.88)",
     textAlign: "right",
     writingDirection: "rtl",
+  },
+  premiumTeaserCard: {
+    padding: 17,
+    backgroundColor: "rgba(124, 154, 255, 0.06)",
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(124, 154, 255, 0.22)",
+    alignSelf: "stretch",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  premiumTeaserTitle: {
+    fontSize: 16,
+    fontFamily: fonts.medium,
+    lineHeight: 22,
+    color: theme.text,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  premiumTeaserSub: {
+    fontSize: 14,
+    fontFamily: fonts.regular,
+    lineHeight: 20,
+    color: CAPTION_COLOR,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  premiumTeaserMuted: {
+    fontSize: 13,
+    fontFamily: fonts.regular,
+    lineHeight: 18,
+    color: CAPTION_COLOR,
+    textAlign: "right",
+    writingDirection: "rtl",
+  },
+  premiumTeaserCta: {
+    alignSelf: "stretch",
+    marginTop: 8,
   },
   footerAction: {
     alignSelf: "stretch",

@@ -26,6 +26,7 @@ import {
   setAnalyticsConsent,
 } from '../storage/analyticsConsent';
 import { featureFlags } from '../config/featureFlags';
+import { usePremiumEntitlement } from '../hooks/usePremiumEntitlement';
 
 const PRESETS: { label: string; hour: number; minute: number }[] = [
   { label: '08:00', hour: 8, minute: 0 },
@@ -53,6 +54,7 @@ export function SettingsScreen({
 }: Props) {
   const [settings, setSettings] = useState<ReminderSettings | null>(null);
   const [analyticsOn, setAnalyticsOn] = useState(true);
+  const { premium, loading: premiumLoading } = usePremiumEntitlement();
 
   useEffect(() => {
     void loadReminderSettings().then(setSettings);
@@ -126,10 +128,22 @@ export function SettingsScreen({
         <PremiumCard style={styles.card}>
           <Text style={styles.sectionTitle}>מנוי</Text>
           <View style={styles.separator} />
+          <View style={styles.row}>
+            <Text style={styles.label}>סטטוס</Text>
+            <Text style={styles.statusValue}>
+              {premiumLoading
+                ? 'טוען…'
+                : premium
+                  ? 'Identity Shift+ פעיל'
+                  : 'חינם'}
+            </Text>
+          </View>
           <Text style={styles.trackHint}>
             תמיכה בפיתוח ומסלולים נוספים בעתיד — בלי לנעול את האימון הבסיסי.
           </Text>
-          <PrimaryButton label="שדרוג" onPress={onOpenUpgrade} />
+          {!premium ? (
+            <PrimaryButton label="שדרוג" onPress={onOpenUpgrade} />
+          ) : null}
         </PremiumCard>
       ) : null}
 
@@ -293,6 +307,15 @@ const styles = StyleSheet.create({
   label: {
     ...typography.body,
     writingDirection: 'rtl',
+  },
+  statusValue: {
+    ...typography.body,
+    fontWeight: '600',
+    color: theme.text,
+    writingDirection: 'rtl',
+    textAlign: 'left',
+    flex: 1,
+    marginStart: 12,
   },
   hint: {
     ...typography.caption,

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -12,6 +12,7 @@ import { PrimaryButton } from '../ui/PrimaryButton';
 import { SecondaryButton } from '../ui/SecondaryButton';
 import { theme, typography } from '../ui/theme';
 import { getBillingProvider } from '../billing/getBillingProvider';
+import { notifyBillingRefresh } from '../billing/billingRefresh';
 import { useBilling } from '../billing/useBilling';
 import type { BillingPeriod } from '../billing/types';
 import { trackEvent } from '../analytics/track';
@@ -29,10 +30,34 @@ export function PaywallScreen({ reason, programId, onClose }: Props) {
   const [purchaseBusy, setPurchaseBusy] = useState(false);
   const [restoreBusy, setRestoreBusy] = useState(false);
   const [inlineError, setInlineError] = useState<string | null>(null);
+  const [successKind, setSuccessKind] = useState<'none' | 'purchase' | 'restore'>(
+    'none'
+  );
+  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     void trackEvent('paywall_viewed', { reason, programId });
   }, [reason, programId]);
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
+  const scheduleCloseAfterSuccess = useCallback(
+    (kind: 'purchase' | 'restore') => {
+      notifyBillingRefresh();
+      setSuccessKind(kind);
+      if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+      closeTimerRef.current = setTimeout(() => {
+        closeTimerRef.current = null;
+        setSuccessKind('none');
+        onClose();
+      }, 1400);
+    },
+    [onClose]
+  );
 
   const onPurchase = useCallback(async () => {
     setInlineError(null);
@@ -42,7 +67,7 @@ export function PaywallScreen({ reason, programId, onClose }: Props) {
       await trackEvent('purchase_started', { plan, programId });
       await getBillingProvider().purchasePackage(plan);
       await trackEvent('purchase_success', { plan, programId });
-      onClose();
+      scheduleCloseAfterSuccess('purchase');
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'unknown';
       setInlineError(msg);
@@ -50,7 +75,7 @@ export function PaywallScreen({ reason, programId, onClose }: Props) {
     } finally {
       setPurchaseBusy(false);
     }
-  }, [plan, programId, onClose]);
+  }, [plan, programId, scheduleCloseAfterSuccess]);
 
   const onRestore = useCallback(async () => {
     setInlineError(null);
@@ -59,7 +84,7 @@ export function PaywallScreen({ reason, programId, onClose }: Props) {
       await trackEvent('restore_started', { programId });
       await getBillingProvider().restorePurchases();
       await trackEvent('restore_success', { programId });
-      onClose();
+      scheduleCloseAfterSuccess('restore');
     } catch (e) {
       const msg = e instanceof Error ? e.message : 'unknown';
       setInlineError(msg);
@@ -67,9 +92,25 @@ export function PaywallScreen({ reason, programId, onClose }: Props) {
     } finally {
       setRestoreBusy(false);
     }
-  }, [programId, onClose]);
+  }, [programId, scheduleCloseAfterSuccess]);
 
-  const busy = purchaseBusy || restoreBusy;
+  const busy = purchaseBusy || restoreBusy || successKind !== 'none';
+
+  if (successKind !== 'none') {
+    return (
+      <ScreenLayout background="gradient">
+        <View style={styles.centered}>
+          <Text style={styles.successTitle}>
+            {successKind === 'purchase'
+              ? 'המנוי הופעל'
+              : 'הרכישות שוחזרו בהצלחה'}
+          </Text>
+          <Text style={styles.muted}>סוגרים…</Text>
+          <ActivityIndicator color={theme.accent} style={styles.loader} />
+        </View>
+      </ScreenLayout>
+    );
+  }
 
   if (loading && !offerings && !error) {
     return (
@@ -270,6 +311,12 @@ const styles = StyleSheet.create({
   muted: {
     color: theme.textSecondary,
     marginTop: 12,
+    writingDirection: 'rtl',
+  },
+  successTitle: {
+    ...typography.screenTitle,
+    fontSize: 22,
+    textAlign: 'center',
     writingDirection: 'rtl',
   },
 });

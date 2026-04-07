@@ -237,6 +237,9 @@ function AppInner() {
         onStartSession={startSession}
         onOpenSettings={() => setPanel('settings')}
         onOpenAbout={() => setPanel('about')}
+        onOpenPremiumUpgrade={
+          featureFlags.ENABLE_PAYWALL ? openPaywallFromSettings : undefined
+        }
       />
     </SafeAreaView>
   );
