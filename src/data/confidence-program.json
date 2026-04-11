@@ -3,7 +3,7 @@
     "id": "confidence",
     "title": "Confidence Training",
     "duration_days": 7,
-    "estimated_session_minutes": 5
+    "estimated_session_minutes": 6
   },
   "days": [
     {
@@ -19,7 +19,7 @@
         {
           "type": "breathing",
           "text": "קח נשימה עמוקה… ותן לעצמך רגע לעצור.",
-          "duration": 6
+          "duration": 60
         },
         {
           "type": "trigger",
@@ -57,7 +57,7 @@
           "type": "meditation",
           "text": "דמיין את עצמך נשאר נוכח ובטוח באותו רגע.",
           "subtext": "שים לב ליציבה, לנשימה, ולקול שלך",
-          "duration": 8,
+          "duration": 150,
           "audio": "calm_loop_01"
         },
         {
@@ -90,7 +90,7 @@
         {
           "type": "breathing",
           "text": "עצור לרגע. שאיפה עמוקה… ונשיפה איטית.",
-          "duration": 6
+          "duration": 60
         },
         {
           "type": "trigger",
@@ -124,7 +124,7 @@
           "type": "meditation",
           "text": "דמיין את אותה שנייה — ואת עצמך בוחר להישאר במקום לברוח.",
           "subtext": "לא צריך להיות מושלם. רק להישאר",
-          "duration": 8,
+          "duration": 150,
           "audio": "calm_loop_01"
         },
         {
@@ -157,7 +157,7 @@
         {
           "type": "breathing",
           "text": "שאיפה עמוקה… נשיפה איטית… חזור לרגע הזה.",
-          "duration": 6
+          "duration": 60
         },
         {
           "type": "trigger",
@@ -195,7 +195,7 @@
           "type": "meditation",
           "text": "דמיין את עצמך נכנס לאותה סיטואציה עם סיפור חדש ופשוט יותר.",
           "subtext": "פחות ביקורת, יותר נוכחות",
-          "duration": 8,
+          "duration": 150,
           "audio": "calm_loop_01"
         },
         {
@@ -228,7 +228,7 @@
         {
           "type": "breathing",
           "text": "נשימה פנימה… ונשיפה ארוכה החוצה.",
-          "duration": 6
+          "duration": 60
         },
         {
           "type": "trigger",
@@ -257,7 +257,7 @@
           "type": "meditation",
           "text": "דמיין את עצמך עומד, יושב או מדבר מתוך הביטחון הזה.",
           "subtext": "לא משחק דמות — אלא נוגע במשהו שכבר קיים בך",
-          "duration": 8,
+          "duration": 150,
           "audio": "calm_loop_01"
         },
         {
@@ -290,7 +290,7 @@
         {
           "type": "breathing",
           "text": "שאיפה עמוקה… ונשיפה שמשחררת לחץ.",
-          "duration": 6
+          "duration": 60
         },
         {
           "type": "trigger",
@@ -328,7 +328,7 @@
           "type": "meditation",
           "text": "דמיין את עצמך עושה את הפעולה הקטנה הזאת בפשטות ובשקט.",
           "subtext": "לא צריך דרמה. רק תנועה קטנה קדימה",
-          "duration": 8,
+          "duration": 120,
           "audio": "calm_loop_01"
         },
         {
@@ -361,7 +361,7 @@
         {
           "type": "breathing",
           "text": "קח נשימה עמוקה… והרגש את הגוף מתייצב.",
-          "duration": 6
+          "duration": 60
         },
         {
           "type": "trigger",
@@ -394,7 +394,7 @@
           "type": "meditation",
           "text": "דמיין נשימה פתוחה, כתפיים רכות, ויציבות שקטה בכל הגוף.",
           "subtext": "תן לגוף ללמוד את התחושה",
-          "duration": 10,
+          "duration": 150,
           "audio": "calm_loop_01"
         },
         {
@@ -427,7 +427,7 @@
         {
           "type": "breathing",
           "text": "שאיפה עמוקה… ונשיפה שמחזירה אותך למה שבנית השבוע.",
-          "duration": 6
+          "duration": 60
         },
         {
           "type": "trigger",
@@ -465,7 +465,7 @@
           "type": "meditation",
           "text": "דמיין את עצמך בתוך הרגע הזה — רגוע יותר, נוכח יותר, מבטא את עצמך יותר.",
           "subtext": "לא מושלם. אמיתי",
-          "duration": 10,
+          "duration": 150,
           "audio": "calm_loop_01"
         },
         {

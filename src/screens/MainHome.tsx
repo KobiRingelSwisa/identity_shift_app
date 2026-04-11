@@ -10,6 +10,7 @@ import {
   Text,
   View,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { AccentGlow } from "../ui/AccentGlow";
 import { ScreenLayout } from "../ui/ScreenLayout";
 import { PrimaryButton } from "../ui/PrimaryButton";
@@ -141,16 +142,36 @@ export function MainHome({
         accessibilityLabel="הגדרות"
         onPress={onOpenSettings}
         hitSlop={10}
+        style={({ pressed }) => [
+          styles.topLinkRow,
+          pressed && styles.topLinkRowPressed,
+        ]}
       >
         <Text style={styles.topLink}>הגדרות</Text>
+        <Ionicons
+          name="settings-outline"
+          size={18}
+          color={CAPTION_COLOR}
+          style={styles.topLinkIcon}
+        />
       </Pressable>
       <Pressable
         accessibilityRole="button"
         accessibilityLabel="אודות"
         onPress={onOpenAbout}
         hitSlop={10}
+        style={({ pressed }) => [
+          styles.topLinkRow,
+          pressed && styles.topLinkRowPressed,
+        ]}
       >
         <Text style={styles.topLink}>אודות</Text>
+        <Ionicons
+          name="information-circle-outline"
+          size={18}
+          color={CAPTION_COLOR}
+          style={styles.topLinkIcon}
+        />
       </Pressable>
     </View>
   );
@@ -159,6 +180,7 @@ export function MainHome({
     return (
       <ScreenLayout background="gradient" footer={null}>
         <View style={styles.stack}>
+          {topLinks}
           <View style={styles.heroShell}>
             <ImageBackground
               source={HOME_HERO_BG}
@@ -185,7 +207,6 @@ export function MainHome({
             <Animated.View
               style={[styles.heroFade, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
             >
-              {topLinks}
               <View style={styles.heroCopy}>
                 <Text style={styles.caption}>המסלול</Text>
                 <Text style={styles.heroTitle}>הושלם</Text>
@@ -236,6 +257,7 @@ export function MainHome({
       }
     >
       <View style={styles.stack}>
+        {topLinks}
         {/* 1. Hero */}
         <View style={styles.heroShell}>
           <ImageBackground
@@ -263,7 +285,6 @@ export function MainHome({
           <Animated.View
             style={[styles.heroFade, { minHeight: HERO_MIN_H, opacity: heroOpacity }]}
           >
-            {topLinks}
             <View style={styles.heroCopy}>
               <Text style={styles.caption}>{HERO_CAPTION}</Text>
               <Text style={styles.heroTitle}>{`יום ${dayToShow}`}</Text>
@@ -327,7 +348,7 @@ const styles = StyleSheet.create({
   stack: {
     alignSelf: "stretch",
     gap: 24,
-    paddingTop: 12,
+    paddingTop: 0,
   },
   heroShell: {
     alignSelf: "stretch",
@@ -348,8 +369,7 @@ const styles = StyleSheet.create({
     opacity: 0.02,
   },
   heroFade: {
-    paddingTop: 0,
-    justifyContent: "flex-start",
+    justifyContent: "center",
     alignItems: "flex-end",
     alignSelf: "stretch",
   },
@@ -360,10 +380,24 @@ const styles = StyleSheet.create({
   },
   topLinks: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    justifyContent: "flex-start",
     alignSelf: "stretch",
     alignItems: "center",
-    marginBottom: 16,
+    gap: 10,
+  },
+  topLinkRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  topLinkRowPressed: {
+    backgroundColor: "rgba(255,255,255,0.08)",
   },
   topLink: {
     fontSize: 15,
@@ -371,6 +405,9 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     color: CAPTION_COLOR,
     writingDirection: "rtl",
+  },
+  topLinkIcon: {
+    marginTop: 1,
   },
   caption: {
     fontSize: 13,
